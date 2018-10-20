@@ -7,15 +7,15 @@
 class Word
 {
 public:
-    Word(QString english, QString meaning, QString part);
-    friend void pushNewWord(Word*& words_head, QString english, QString meaning, QString part);
+    Word(QString english, QString part, QString meaning);
+    friend void pushNewWord(Word*& words_head, QString english, QString part, QString meaning);
     friend void printAllWords(Word* words_head);
 private:
-    QString english, meaning, part;
+    QString english, part, meaning;
     Word* next;
 };
 
-void pushNewWord(Word*& words_head, QString english, QString meaning, QString part);
+void pushNewWord(Word*& words_head, QString english, QString part, QString meaning);
 void printAllWords(Word* words_head);
 
 #endif // WORD_H

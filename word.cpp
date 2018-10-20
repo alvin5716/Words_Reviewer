@@ -1,14 +1,14 @@
 #include "word.h"
 
-Word::Word(QString english, QString meaning, QString part):
-    english(english), meaning(meaning), part(part),
+Word::Word(QString english, QString part, QString meaning):
+    english(english), part(part), meaning(meaning),
     next(nullptr)
 {
 
 }
 
-void pushNewWord(Word*& words_head, QString english, QString meaning, QString part) {
-    Word* new_word = new Word(english,meaning,part);
+void pushNewWord(Word*& words_head, QString english, QString part, QString meaning) {
+    Word* new_word = new Word(english,part,meaning);
     Word* ptr=words_head;
     words_head=new_word;
     new_word->next=ptr;
