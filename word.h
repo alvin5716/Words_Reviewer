@@ -2,20 +2,32 @@
 #define WORD_H
 
 #include <QString>
+#include <QObject>
 #include <QDebug>
 
-class Word
+class Word : public QObject
 {
+    Q_OBJECT
 public:
     Word(QString english, QString part, QString meaning);
+    void printAllWords() const;
+    Word* at(unsigned index);
+    Word* getNext() const;
+    static unsigned getCount();
     friend void pushNewWord(Word*& words_head, QString english, QString part, QString meaning);
-    friend void printAllWords(Word* words_head);
+    ~Word();
+public slots:
+    void giveWordData();
+signals:
+    void giveEnglish(QString);
+    void givePart(QString);
+    void giveMeaning(QString);
 private:
+    static unsigned count;
     QString english, part, meaning;
     Word* next;
 };
 
 void pushNewWord(Word*& words_head, QString english, QString part, QString meaning);
-void printAllWords(Word* words_head);
 
 #endif // WORD_H
