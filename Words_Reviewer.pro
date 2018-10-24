@@ -27,12 +27,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     word.cpp \
-    wordsfile.cpp
+    wordsfile.cpp \
+    customstring.cpp
 
 HEADERS += \
         mainwindow.h \
     word.h \
-    wordsfile.h
+    wordsfile.h \
+    customstring.h
 
 FORMS += \
         mainwindow.ui

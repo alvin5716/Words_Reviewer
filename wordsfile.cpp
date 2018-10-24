@@ -9,11 +9,11 @@ WordsFile::WordsFile()
 }
 
 void WordsFile::prepToWrite() {
-    this->close();
+    if(!(!this)) this->close();
     this->open(QIODevice::WriteOnly|QIODevice::Append);
 }
 
 void WordsFile::prepToRead() {
-    this->close();
+    if(!(!this)) this->close();
     this->open(QIODevice::ReadOnly);
 }

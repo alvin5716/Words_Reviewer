@@ -2,18 +2,20 @@
 
 unsigned Word::count=0;
 
-Word::Word(QString english, QString part, QString meaning):
+Word::Word(CustomString english, CustomString part, CustomString meaning):
     english(english), part(part), meaning(meaning),
-    next(nullptr)
+    next(nullptr), last(nullptr)
 {
     ++count;
 }
 
-void pushNewWord(Word*& words_head, QString english, QString part, QString meaning) {
+void pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning) {
     Word* new_word = new Word(english,part,meaning);
+    if(words_head==nullptr) words_tail=new_word;
     Word* ptr=words_head;
     words_head=new_word;
     new_word->next=ptr;
+    if(ptr!=nullptr) ptr->last=new_word;
 }
 
 void Word::printAllWords() const{
@@ -22,10 +24,12 @@ void Word::printAllWords() const{
     }
 }
 
-void Word::giveWordData() {
-    emit giveEnglish(english);
-    emit givePart(part);
-    emit giveMeaning(meaning);
+void Word::getWordDataToUI() {
+    emit giveWordData(static_cast<QString>(getWordData()));
+}
+
+CustomString Word::getWordData() const{
+    return english+" "+part+" "+meaning;
 }
 
 Word* Word::at(unsigned index) {
@@ -36,6 +40,9 @@ Word* Word::at(unsigned index) {
 }
 Word* Word::getNext() const{
     return this->next;
+}
+Word* Word::getLast() const{
+    return this->last;
 }
 unsigned Word::getCount() {
     return count;
