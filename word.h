@@ -16,7 +16,8 @@ public:
     Word* getLast() const;
     CustomString getWordData() const;
     static unsigned getCount();
-    friend void pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning);
+    friend Word* pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning);
+    friend void deleteCurrentWord(Word*& words_head, Word*& words_tail, Word*& current_word);
     ~Word();
 public slots:
     void getWordDataToUI();
@@ -28,6 +29,7 @@ private:
     Word* next, *last;
 };
 
-void pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning);
+Word* pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning);
+void deleteCurrentWord(Word*& words_head, Word*& words_tail, Word*& current_word);
 
 #endif // WORD_H

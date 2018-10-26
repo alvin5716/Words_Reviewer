@@ -2,13 +2,15 @@
 #define WORDSFILE_H
 
 #include <QFile>
+#include "customstring.h"
 
 class WordsFile: public QFile
 {
 public:
-    WordsFile();
+    WordsFile(CustomString file_name="words");
     void prepToWrite();
     void prepToRead();
+    bool deleteLine(int x); //return true if deletion successed
 };
 
 #endif // WORDSFILE_H

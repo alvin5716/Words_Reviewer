@@ -191,7 +191,7 @@ border: 1.5px solid white;
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="wordListPage">
      <widget class="QListWidget" name="wordList">
@@ -207,9 +207,9 @@ border: 1.5px solid white;
      <widget class="QPushButton" name="addNewWordButton">
       <property name="geometry">
        <rect>
-        <x>250</x>
+        <x>140</x>
         <y>390</y>
-        <width>181</width>
+        <width>111</width>
         <height>30</height>
        </rect>
       </property>
@@ -222,12 +222,54 @@ border: 1.5px solid white;
        </font>
       </property>
       <property name="text">
-       <string>Add new word</string>
+       <string>Add</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="deleteWordButton">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>390</y>
+        <width>111</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Delete</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="optionsButton">
+      <property name="geometry">
+       <rect>
+        <x>420</x>
+        <y>390</y>
+        <width>111</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Options</string>
       </property>
      </widget>
     </widget>
     <widget class="QWidget" name="wordInputPage">
-     <widget class="QLineEdit" name="englishInput">
+     <widget class="InputForm" name="englishInput">
       <property name="geometry">
        <rect>
         <x>230</x>
@@ -246,7 +288,7 @@ border: 1.5px solid white;
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QLineEdit" name="partInput">
+     <widget class="InputForm" name="partInput">
       <property name="geometry">
        <rect>
         <x>310</x>
@@ -265,7 +307,7 @@ border: 1.5px solid white;
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QLineEdit" name="meaningInput">
+     <widget class="InputForm" name="meaningInput">
       <property name="geometry">
        <rect>
         <x>230</x>
@@ -415,6 +457,13 @@ border: 1.5px solid white;
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>InputForm</class>
+   <extends>QLineEdit</extends>
+   <header>inputform.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

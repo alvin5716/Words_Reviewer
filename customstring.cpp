@@ -1,4 +1,11 @@
 #include "customstring.h"
+#include <QStringList>
+
+CustomString::CustomString()
+{
+
+}
+
 
 CustomString::CustomString(const char *ch)
     :QString(ch)
@@ -39,17 +46,29 @@ void CustomString::replaceSpaceToUnderline() {
 }
 
 void CustomString::partOfSpeechSetting() {
-    if(!this->startsWith("(")) {
-        this->prepend("(");
+    CustomString temp(*this);
+    QStringList temp2 = temp.split(",");
+    CustomString temp3[temp2.length()];
+    for(int i=0;i<temp2.length();++i) {
+        temp3[i] = temp2.at(i);
+        //left parenthesis
+        if(!temp3[i].startsWith("(")) {
+            temp3[i].prepend("(");
+        }
+        //right parenthesis and dot
+        if(temp3[i].endsWith(".")) {
+            temp3[i].append(")");
+        } else if(temp3[i].endsWith(".)")) {
+            ;
+        } else if(temp3[i].endsWith(")")) {
+            temp3[i].insert(temp3[i].length()-1,".");
+        } else {
+            temp3[i].append(".)");
+        }
     }
-    if(this->endsWith(".")) {
-        this->prepend(")");
-    } else if(this->endsWith(".)")) {
-        ;
-    } else if(this->endsWith(")")) {
-        this->insert(this->length()-1,".");
-    } else {
-        this->prepend(".)");
+    this->clear();
+    for(int i=0;i<temp2.length();++i) {
+        this->append(temp3[i]);
     }
 }
 

@@ -6,6 +6,7 @@
 class CustomString: public QString
 {
 public:
+    CustomString();
     CustomString(QString str);
     CustomString(QByteArray str);
     CustomString(const char *ch);

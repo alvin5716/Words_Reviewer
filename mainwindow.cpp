@@ -22,6 +22,34 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFocus();
     wordListClose();
     ui->stackedWidget->setCurrentIndex(customEnum::wordListPage);
+    //buttons
+    connect(ui->closeButton,SIGNAL(clicked(bool)),qApp,SLOT(quit()));
+    connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(showNextWord()));
+    connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
+    connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(showLastWord()));
+    connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
+    connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(playButtonClicked()));
+    connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
+    connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(listButtonClicked()));
+    connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
+    connect(ui->wordList,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(FindItemAndShowWord(QListWidgetItem*)));
+    connect(ui->addNewWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToAddNewWord()));
+    connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
+    connect(ui->enterInputButton,SIGNAL(clicked(bool)),this,SLOT(submitInput()));
+    connect(ui->clearInputButton,SIGNAL(clicked(bool)),this,SLOT(clearInputs()));
+    connect(ui->deleteWordButton,SIGNAL(clicked(bool)),this,SLOT(deleteWordButtonClicked()));
+    //forms
+    connect(ui->englishInput,SIGNAL(selectNextOne()),ui->partInput,SLOT(setFocus()));
+    connect(ui->partInput,SIGNAL(selectNextOne()),ui->meaningInput,SLOT(setFocus()));
+    connect(ui->meaningInput,SIGNAL(selectNextOne()),ui->englishInput,SLOT(setFocus()));
+    connect(ui->meaningInput,SIGNAL(selectLastOne()),ui->partInput,SLOT(setFocus()));
+    connect(ui->partInput,SIGNAL(selectLastOne()),ui->englishInput,SLOT(setFocus()));
+    connect(ui->englishInput,SIGNAL(selectLastOne()),ui->meaningInput,SLOT(setFocus()));
+    connect(ui->meaningInput,SIGNAL(enterInputs()),ui->enterInputButton,SIGNAL(clicked()));
+    initSettings();
+}
+
+void MainWindow::initSettings() {
     //read file
     unsigned lines_count=0;
     while(!file->atEnd()) {
@@ -62,21 +90,19 @@ MainWindow::MainWindow(QWidget *parent) :
     timer->setInterval(10000);
     connect(timer,&QTimer::timeout,this,&MainWindow::showNextWord);
     timer->start();
-    //buttons
-    connect(ui->closeButton,SIGNAL(clicked(bool)),qApp,SLOT(quit()));
-    connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(showNextWord()));
-    connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(showLastWord()));
-    connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(playButtonClicked()));
-    connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(listButtonClicked()));
-    connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->wordList,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(FindItemAndShowWord(QListWidgetItem*)));
-    connect(ui->addNewWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToAddNewWord()));
-    connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
-    connect(ui->enterInputButton,SIGNAL(clicked(bool)),this,SLOT(submitInput()));
-    connect(ui->clearInputButton,SIGNAL(clicked(bool)),this,SLOT(clearInputs()));
+}
+
+void MainWindow::deleteWordButtonClicked() {
+    for(int i=0;i<ui->wordList->count();++i) {
+        if(ui->wordList->item(i)->text()==current_word->getWordData()) {
+            file->deleteLine(ui->wordList->count()-i);
+            QListWidgetItem *removed_item = ui->wordList->takeItem(i);
+            delete removed_item;
+            break;
+        }
+    }
+    deleteCurrentWord(words_head,words_tail,current_word);
+    showWord(current_word);
 }
 
 void MainWindow::clearInputs() {
@@ -90,12 +116,14 @@ void MainWindow::submitInput() {
         CustomString english(ui->englishInput->text()), part(ui->partInput->text()), meaning(ui->meaningInput->text());
         if(english.lengthWithoutSpace()==0 || part.lengthWithoutSpace()==0 || meaning.lengthWithoutSpace()==0)
             throw 1;
-        //linked-list
-        english.replaceSpaceToUnderline();
-        part.replaceSpaceToUnderline();
-        meaning.replaceSpaceToUnderline();
-        pushNewWord(words_head,words_tail,english,part,meaning);
+        //linked-list and set it to current word
+        part.partOfSpeechSetting();
+        current_word = pushNewWord(words_head,words_tail,english,part,meaning);
+        this->connectWordToUI(words_head);
+        showWord(current_word);
         //file
+        english.replaceSpaceToUnderline();
+        meaning.replaceSpaceToUnderline();
         file->prepToWrite();
         QTextStream out(file);
         out.setCodec("UTF-8");
@@ -139,10 +167,15 @@ void MainWindow::FindItemAndShowWord(QListWidgetItem* clicked_item) {
 }
 
 void MainWindow::showWord(Word *word) {
+    if(word==nullptr) {
+        ui->strWord->setText("-");
+        return;
+    }
     word->getWordDataToUI();
     current_word=word;
     setPreferredFontSize();
     if(playing) timer->start();
+    qDebug() << current_word->getWordData();
 }
 
 void MainWindow::playButtonClicked() {

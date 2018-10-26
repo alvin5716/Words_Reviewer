@@ -28,13 +28,15 @@ SOURCES += \
         mainwindow.cpp \
     word.cpp \
     wordsfile.cpp \
-    customstring.cpp
+    customstring.cpp \
+    inputform.cpp
 
 HEADERS += \
         mainwindow.h \
     word.h \
     wordsfile.h \
-    customstring.h
+    customstring.h \
+    inputform.h
 
 FORMS += \
         mainwindow.ui

@@ -28,6 +28,7 @@ public:
     void wordListOpen();
     void wordListClose();
     void spawnWarningBox(CustomString content);
+    void initSettings();
     ~MainWindow();
 public slots:
     void showNextWord();
@@ -39,6 +40,7 @@ public slots:
     void prepToAddNewWord();
     void playButtonClicked();
     void listButtonClicked();
+    void deleteWordButtonClicked();
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
 private:
     Ui::MainWindow *ui;
