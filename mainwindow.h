@@ -13,8 +13,9 @@ class MainWindow;
 }
 
 namespace customEnum {
-    enum pageNumber{wordListPage,wordInputPage};
+    enum pageNumber{wordListPage,wordInputPage,optionPage};
 }
+enum class OrderMethod{chronological,random};
 
 class MainWindow : public QMainWindow
 {
@@ -31,15 +32,19 @@ public:
     void initSettings();
     ~MainWindow();
 public slots:
+    void showWord(Word* word);
     void showNextWord();
     void showLastWord();
-    void showWord(Word* word);
+    void showRandomWord();
     void listWords();
     void submitInput();
     void clearInputs();
+    void changeOrderMethod();
     void prepToAddNewWord();
+    void showOptions();
     void playButtonClicked();
     void listButtonClicked();
+    void minimizeButtonClicked();
     void deleteWordButtonClicked();
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
 private:
@@ -47,7 +52,8 @@ private:
     WordsFile *file;
     Word *words_head, *current_word, *words_tail;
     QTimer* timer;
-    bool playing, word_list_opening;
+    bool playing, word_list_opening, minimizing;
+    OrderMethod order_method;
 };
 
 #endif // MAINWINDOW_H

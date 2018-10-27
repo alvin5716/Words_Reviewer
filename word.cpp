@@ -49,6 +49,14 @@ void Word::getWordDataToUI() {
     emit giveWordData(static_cast<QString>(getWordData()));
 }
 
+CustomString Word::getEnglish() const{
+    return english;
+}
+
+CustomString Word::getPart() const{
+    return part;
+}
+
 CustomString Word::getWordData() const{
     return english+" "+part+" "+meaning;
 }

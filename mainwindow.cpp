@@ -12,7 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     file(new WordsFile),
     words_head(nullptr), current_word(nullptr), words_tail(nullptr),
-    playing(true),word_list_opening(false)
+    playing(true),word_list_opening(false), minimizing(false),
+    order_method(OrderMethod::chronological)
 {
     ui->setupUi(this);
     //widget settings
@@ -38,6 +39,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->enterInputButton,SIGNAL(clicked(bool)),this,SLOT(submitInput()));
     connect(ui->clearInputButton,SIGNAL(clicked(bool)),this,SLOT(clearInputs()));
     connect(ui->deleteWordButton,SIGNAL(clicked(bool)),this,SLOT(deleteWordButtonClicked()));
+    connect(ui->minimizeButton,SIGNAL(clicked(bool)),this,SLOT(minimizeButtonClicked()));
+    connect(ui->minimizeButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
+    connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(changeOrderMethod()));
+    connect(ui->optionsButton,SIGNAL(clicked(bool)),this,SLOT(showOptions()));
+    connect(ui->backOptionButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
     //forms
     connect(ui->englishInput,SIGNAL(selectNextOne()),ui->partInput,SLOT(setFocus()));
     connect(ui->partInput,SIGNAL(selectNextOne()),ui->meaningInput,SLOT(setFocus()));
@@ -47,6 +53,51 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->englishInput,SIGNAL(selectLastOne()),ui->meaningInput,SLOT(setFocus()));
     connect(ui->meaningInput,SIGNAL(enterInputs()),ui->enterInputButton,SIGNAL(clicked()));
     initSettings();
+}
+void MainWindow::showOptions() {
+    ui->stackedWidget->setCurrentIndex(customEnum::optionPage);
+}
+
+void MainWindow::changeOrderMethod() {
+    switch(order_method) {
+    case OrderMethod::chronological:
+        order_method=OrderMethod::random;
+        ui->playingOrderButton->setText("Random");
+        timer->disconnect();
+        connect(timer,SIGNAL(timeout()),this,SLOT(showRandomWord()));
+        break;
+    case OrderMethod::random:
+        order_method=OrderMethod::chronological;
+        ui->playingOrderButton->setText("Chronological");
+        timer->disconnect();
+        connect(timer,SIGNAL(timeout()),this,SLOT(showNextWord()));
+        break;
+    }
+}
+
+void MainWindow::minimizeButtonClicked() {
+    if(minimizing) {
+        ui->listButton->show();
+        ui->playButton->show();
+        ui->strWord->show();
+        ui->nextButton->show();
+        ui->lastButton->show();
+        ui->minimizeButton->setGeometry(610,90,ui->minimizeButton->width(),ui->minimizeButton->height());
+        ui->closeButton->setGeometry(650,90,ui->closeButton->width(),ui->closeButton->height());
+        this->setGeometry(this->x(),this->y(),692,131);
+        setPreferredFontSize();
+    } else {
+        if(word_list_opening) listButtonClicked();
+        ui->listButton->hide();
+        ui->playButton->hide();
+        ui->strWord->hide();
+        ui->nextButton->hide();
+        ui->lastButton->hide();
+        ui->minimizeButton->setGeometry(10,10,ui->minimizeButton->width(),ui->minimizeButton->height());
+        ui->closeButton->setGeometry(50,10,ui->closeButton->width(),ui->closeButton->height());
+        this->setGeometry(this->x(),this->y(),91,51);
+    }
+    minimizing=!minimizing;
 }
 
 void MainWindow::initSettings() {
@@ -87,7 +138,7 @@ void MainWindow::initSettings() {
     setPreferredFontSize();
     //timer
     timer = new QTimer;
-    timer->setInterval(10000);
+    timer->setInterval(20000);
     connect(timer,&QTimer::timeout,this,&MainWindow::showNextWord);
     timer->start();
 }
@@ -118,6 +169,9 @@ void MainWindow::submitInput() {
             throw 1;
         //linked-list and set it to current word
         part.partOfSpeechSetting();
+        for(Word* ptr=words_head;ptr!=nullptr;ptr=ptr->getNext())
+            if(ptr->getEnglish()==english && ptr->getPart()==part)
+                throw 2;
         current_word = pushNewWord(words_head,words_tail,english,part,meaning);
         this->connectWordToUI(words_head);
         showWord(current_word);
@@ -132,8 +186,18 @@ void MainWindow::submitInput() {
         file->close();
         //clear forms
         clearInputs();
-    } catch(int) {
-        spawnWarningBox("You have to fill all 3 forms.");
+
+    } catch(int x) {
+        switch (x) {
+        case 1:
+            spawnWarningBox("You have to fill all 3 forms.");
+            break;
+        case 2:
+            spawnWarningBox("This word with the same part of speech has existed.");
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -221,6 +285,7 @@ void MainWindow::showNextWord() {
         showWord(words_head);
     } else {
         ui->strWord->setText("-");
+        setPreferredFontSize();
     }
 }
 
@@ -231,7 +296,18 @@ void MainWindow::showLastWord() {
         showWord(words_tail);
     } else {
         ui->strWord->setText("-");
+        setPreferredFontSize();
     }
+}
+
+void MainWindow::showRandomWord() {
+    if(words_head==nullptr) {
+        ui->strWord->setText("-");
+        setPreferredFontSize();
+        return;
+    }
+    current_word = words_head->at(rand()%Word::getCount());
+    showWord(current_word);
 }
 
 void MainWindow::connectWordToUI(Word* word) {
@@ -266,7 +342,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
     case Qt::Key_Right:
         this->showNextWord();
         break;
-    case Qt::Key_C:
+    case Qt::Key_X:
         qApp->quit();
         break;
     case Qt::Key_Space:
@@ -275,6 +351,10 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
         break;
     case Qt::Key_L:
         listButtonClicked();
+        break;
+    case Qt::Key_Minus:
+    case Qt::Key_M:
+        minimizeButtonClicked();
         break;
     default:
         break;

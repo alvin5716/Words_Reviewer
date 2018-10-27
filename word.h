@@ -18,6 +18,8 @@ public:
     static unsigned getCount();
     friend Word* pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning);
     friend void deleteCurrentWord(Word*& words_head, Word*& words_tail, Word*& current_word);
+    CustomString getEnglish() const;
+    CustomString getPart() const;
     ~Word();
 public slots:
     void getWordDataToUI();
