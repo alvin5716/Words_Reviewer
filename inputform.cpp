@@ -21,3 +21,8 @@ void InputForm::keyPressEvent(QKeyEvent *e) {
         break;
     }
 }
+
+void InputForm::mousePressEvent(QMouseEvent *e) {
+    emit pressed();
+    QLineEdit::mousePressEvent(e);
+}

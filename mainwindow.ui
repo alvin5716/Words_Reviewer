@@ -43,6 +43,12 @@ border: 3px solid white;
 }
 QLineEdit {
 border: 1.5px solid white;
+}
+QLineEdit#searchInput {
+border: 0.5px solid white;
+}
+QListWidget {
+border: 0.5px solid white;
 }</string>
   </property>
   <widget class="QWidget" name="centralWidget">
@@ -200,7 +206,7 @@ border: 1.5px solid white;
         <x>0</x>
         <y>0</y>
         <width>671</width>
-        <height>381</height>
+        <height>341</height>
        </rect>
       </property>
      </widget>
@@ -265,6 +271,28 @@ border: 1.5px solid white;
       </property>
       <property name="text">
        <string>Options</string>
+      </property>
+     </widget>
+     <widget class="InputForm" name="searchInput">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>350</y>
+        <width>671</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Search...</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
       </property>
      </widget>
     </widget>
@@ -457,7 +485,7 @@ border: 1.5px solid white;
      <widget class="QPushButton" name="playingOrderButton">
       <property name="geometry">
        <rect>
-        <x>350</x>
+        <x>310</x>
         <y>30</y>
         <width>191</width>
         <height>41</height>
@@ -478,7 +506,7 @@ border: 1.5px solid white;
      <widget class="QLabel" name="label_7">
       <property name="geometry">
        <rect>
-        <x>130</x>
+        <x>80</x>
         <y>30</y>
         <width>211</width>
         <height>41</height>
@@ -496,7 +524,7 @@ border: 1.5px solid white;
        <string>Playing order:</string>
       </property>
       <property name="alignment">
-       <set>Qt::AlignCenter</set>
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
      <widget class="QPushButton" name="backOptionButton">
@@ -518,6 +546,99 @@ border: 1.5px solid white;
       </property>
       <property name="text">
        <string>Back</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>100</y>
+        <width>211</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Staying on top:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="stayingOnTopButton">
+      <property name="geometry">
+       <rect>
+        <x>310</x>
+        <y>100</y>
+        <width>191</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>False</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_9">
+      <property name="geometry">
+       <rect>
+        <x>520</x>
+        <y>30</y>
+        <width>81</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>now</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>520</x>
+        <y>100</y>
+        <width>81</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>now</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
       </property>
      </widget>
     </widget>

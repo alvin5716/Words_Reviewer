@@ -57,6 +57,10 @@ CustomString Word::getPart() const{
     return part;
 }
 
+CustomString Word::getMeaning() const{
+    return meaning;
+}
+
 CustomString Word::getWordData() const{
     return english+" "+part+" "+meaning;
 }

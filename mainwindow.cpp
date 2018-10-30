@@ -5,19 +5,18 @@
 #include <QDebug>
 #include <QDesktopWidget>
 #include <QKeyEvent>
-#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    file(new WordsFile),
+    words_file(new WordsFile), options_file(new WordsFile("options")),
     words_head(nullptr), current_word(nullptr), words_tail(nullptr),
-    playing(true),word_list_opening(false), minimizing(false),
-    order_method(OrderMethod::chronological)
+    playing(true),word_list_opening(false), minimizing(false), staying_on_top(false),
+    order_method(customEnum::orderChronological)
 {
     ui->setupUi(this);
     //widget settings
-    this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    this->setWindowFlags(Qt::FramelessWindowHint);
     this->setGeometry(QApplication::desktop()->screenGeometry().width()/2-346,0,692,131);
     this->setFocusPolicy(Qt::NoFocus);
     this->setFocus();
@@ -44,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(changeOrderMethod()));
     connect(ui->optionsButton,SIGNAL(clicked(bool)),this,SLOT(showOptions()));
     connect(ui->backOptionButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
+    connect(ui->stayingOnTopButton,SIGNAL(clicked(bool)),this,SLOT(stayOnTopButtonClick()));
     //forms
     connect(ui->englishInput,SIGNAL(selectNextOne()),ui->partInput,SLOT(setFocus()));
     connect(ui->partInput,SIGNAL(selectNextOne()),ui->meaningInput,SLOT(setFocus()));
@@ -52,22 +52,145 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->partInput,SIGNAL(selectLastOne()),ui->englishInput,SLOT(setFocus()));
     connect(ui->englishInput,SIGNAL(selectLastOne()),ui->meaningInput,SLOT(setFocus()));
     connect(ui->meaningInput,SIGNAL(enterInputs()),ui->enterInputButton,SIGNAL(clicked()));
+    connect(ui->searchInput,SIGNAL(textEdited(QString)),this,SLOT(searchListAndShow()));
+    connect(ui->searchInput,SIGNAL(pressed()),this,SLOT(searchStart()));
+    connect(ui->searchInput,SIGNAL(editingFinished()),this,SLOT(searchFinish()));
     initSettings();
 }
+
+void MainWindow::initSettings() {
+    //read word file
+    unsigned lines_count=0;
+    while(!words_file->atEnd()) {
+        ++lines_count;
+        CustomString strIn = words_file->readLine();
+        QStringList strsIn = strIn.split(' ');
+        try {
+            //check format of file
+            if(strsIn.size()<3) throw strsIn.size();
+            CustomString english(strsIn.at(0)), part(strsIn.at(1)), meaning(strsIn.at(2));
+            //chop \n and \r
+            meaning.chopNewLineChar();
+            //replace underline
+            english.replaceUnderlineToSpace();
+            part.replaceUnderlineToSpace();
+            meaning.replaceUnderlineToSpace();
+            //create new word and push it into data
+            pushNewWord(words_head,words_tail,english,part,meaning);
+            //connect
+            this->connectWordToUI(words_head);
+        } catch(int size) {
+            qDebug() << "Error: At File \"words\": Only got" << size << "string in Line" << lines_count;
+            qApp->quit();
+        }
+    }
+    words_file->close();
+    //show word settings
+    if(words_head!=nullptr) {
+        qsrand(time(NULL));
+        current_word = words_head->at(qrand()%Word::getCount());
+        current_word->getWordDataToUI();
+    } else {
+        ui->strWord->setText("-");
+    }
+    setPreferredFontSize();
+    //timer
+    timer = new QTimer;
+    timer->setInterval(20000);
+    connect(timer,&QTimer::timeout,this,&MainWindow::showNextWord);
+    timer->start();
+    //read options file
+    lines_count=0;
+    while(!this->options_file->atEnd()) {
+        ++lines_count;
+        CustomString strIn = this->options_file->readLine();
+        QStringList strsIn = strIn.split(' ');
+        CustomString strOption = strsIn.at(0);
+        strOption.chopNewLineChar();
+        try {
+            if(strOption=="position") {
+                if(strsIn.length()<3) throw strsIn.length();
+                CustomString strX = strsIn.at(1), strY = strsIn.at(2);
+                int x=strX.toInt(), y=strY.toInt();
+                this->setGeometry(x,y,this->width(),this->height());
+            } else if(strOption=="order") {
+                if(strsIn.length()<2) throw strsIn.length();
+                CustomString strX = strsIn.at(1);
+                int x=strX.toInt();
+                for(int i=0;i<x;++i) this->changeOrderMethod();
+            } else if(strOption=="lastword") {
+                if(strsIn.length()<2) throw strsIn.length();
+                CustomString strX = strsIn.at(1);
+                int x=strX.toInt();
+                showWord(words_head->at(x));
+            } else if(strOption=="pause") {
+                this->playButtonClicked();
+            } else if(strOption=="stayontop") {
+                this->stayOnTopButtonClick();
+            }
+        } catch(int args) {
+            qDebug() << "Error: At File \"options\": Only got" << args << "arguments in Line" << lines_count;
+        }
+    }
+    options_file->close();
+}
+
+void MainWindow::stayOnTopButtonClick() {
+    if(this->staying_on_top) {
+        this->setWindowFlags(Qt::FramelessWindowHint);
+        this->show();
+        ui->stayingOnTopButton->setText("False");
+    } else {
+        this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+        this->show();
+        ui->stayingOnTopButton->setText("True");
+    }
+    staying_on_top=!staying_on_top;
+}
+
+void MainWindow::searchFinish() {
+    if(ui->searchInput->text()=="") ui->searchInput->setText("Search...");
+}
+
+void MainWindow::searchStart() {
+    if(ui->searchInput->text()=="Search...") ui->searchInput->setText("");
+}
+
 void MainWindow::showOptions() {
     ui->stackedWidget->setCurrentIndex(customEnum::optionPage);
 }
 
+void MainWindow::searchListAndShow() {
+    CustomString searchWord = ui->searchInput->text();
+    if(searchWord=="") {
+        this->listWords();
+        return;
+    }
+    if(searchWord=="Search...") {
+        ui->searchInput->setText("");
+    }
+    ui->stackedWidget->setCurrentIndex(customEnum::wordListPage);
+    ui->wordList->clear();
+    for(Word* ptr=words_head;ptr!=nullptr;ptr=ptr->getNext()) {
+        if(CustomString(ptr->getEnglish()).startsWith(static_cast<QString>(searchWord)) ||
+                CustomString(ptr->getMeaning()).startsWith(static_cast<QString>(searchWord))) {
+            QListWidgetItem *item= new QListWidgetItem(static_cast<QString>(ptr->getWordData()));
+            item->setFont(QFont("微軟正黑體",14));
+            ui->wordList->addItem(item);
+        }
+    }
+}
+
 void MainWindow::changeOrderMethod() {
     switch(order_method) {
-    case OrderMethod::chronological:
-        order_method=OrderMethod::random;
+    case customEnum::orderChronological:
+        order_method=customEnum::orderRandom;
         ui->playingOrderButton->setText("Random");
         timer->disconnect();
         connect(timer,SIGNAL(timeout()),this,SLOT(showRandomWord()));
         break;
-    case OrderMethod::random:
-        order_method=OrderMethod::chronological;
+    case customEnum::orderRandom:
+        order_method=customEnum::orderChronological;
         ui->playingOrderButton->setText("Chronological");
         timer->disconnect();
         connect(timer,SIGNAL(timeout()),this,SLOT(showNextWord()));
@@ -100,53 +223,14 @@ void MainWindow::minimizeButtonClicked() {
     minimizing=!minimizing;
 }
 
-void MainWindow::initSettings() {
-    //read file
-    unsigned lines_count=0;
-    while(!file->atEnd()) {
-        ++lines_count;
-        CustomString strIn = file->readLine();
-        QStringList strsIn = strIn.split(' ');
-        try {
-            //check format of file
-            if(strsIn.size()!=3) throw strsIn.size();
-            CustomString english(strsIn.at(0)), part(strsIn.at(1)), meaning(strsIn.at(2));
-            //chop \n and \r
-            meaning.chopNewLineChar();
-            //replace underline
-            english.replaceUnderlineToSpace();
-            part.replaceUnderlineToSpace();
-            meaning.replaceUnderlineToSpace();
-            //create new word and push it into data
-            pushNewWord(words_head,words_tail,english,part,meaning);
-            //connect
-            this->connectWordToUI(words_head);
-        } catch(int size) {
-            qDebug() << "word file format error: got" << size << "string in Line" << lines_count << "\n";
-            qApp->quit();
-        }
-    }
-    file->close();
-    //show word settings
-    if(words_head!=nullptr) {
-        srand(time(NULL));
-        current_word = words_head->at(rand()%Word::getCount());
-        current_word->getWordDataToUI();
-    } else {
-        ui->strWord->setText("-");
-    }
-    setPreferredFontSize();
-    //timer
-    timer = new QTimer;
-    timer->setInterval(20000);
-    connect(timer,&QTimer::timeout,this,&MainWindow::showNextWord);
-    timer->start();
+void MainWindow::deleteWordButtonClicked() {
+    spawnConfirmingBox("Delete: \""+(current_word->getWordData()+"\"?"),MainWindow::deleteWordConfirmed);
 }
 
-void MainWindow::deleteWordButtonClicked() {
+void MainWindow::deleteWordConfirmed() {
     for(int i=0;i<ui->wordList->count();++i) {
         if(ui->wordList->item(i)->text()==current_word->getWordData()) {
-            file->deleteLine(ui->wordList->count()-i);
+            words_file->deleteLine(ui->wordList->count()-i);
             QListWidgetItem *removed_item = ui->wordList->takeItem(i);
             delete removed_item;
             break;
@@ -178,15 +262,14 @@ void MainWindow::submitInput() {
         //file
         english.replaceSpaceToUnderline();
         meaning.replaceSpaceToUnderline();
-        file->prepToWrite();
-        QTextStream out(file);
+        words_file->prepToWrite();
+        QTextStream out(words_file);
         out.setCodec("UTF-8");
         out.setGenerateByteOrderMark(false);
         out << english << ' ' << part << ' ' << meaning << '\n';
-        file->close();
+        words_file->close();
         //clear forms
         clearInputs();
-
     } catch(int x) {
         switch (x) {
         case 1:
@@ -201,10 +284,22 @@ void MainWindow::submitInput() {
     }
 }
 
-void MainWindow::spawnWarningBox(CustomString content) {
+QMessageBox* MainWindow::spawnWarningBox(CustomString content) {
     QMessageBox *warning_box = new QMessageBox(QMessageBox::Icon::Critical,"Error",static_cast<QString>(content));
     warning_box->setWindowFlags(Qt::WindowStaysOnTopHint);
     warning_box->show();
+    return warning_box;
+}
+
+void MainWindow::spawnConfirmingBox(CustomString content, YesNoFunc yesFunc, YesNoFunc noFunc) {
+    if(playing) timer->stop();
+    QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
+    if(confirming_box==QMessageBox::Yes) {
+        if(yesFunc!=nullptr) (this->*yesFunc)();
+    } else {
+        if(noFunc!=nullptr) (this->*noFunc)();
+    }
+    if(playing) timer->start();
 }
 
 void MainWindow::prepToAddNewWord() {
@@ -306,7 +401,11 @@ void MainWindow::showRandomWord() {
         setPreferredFontSize();
         return;
     }
-    current_word = words_head->at(rand()%Word::getCount());
+    Word* new_current_word;
+    do {
+        new_current_word = words_head->at(qrand()%Word::getCount());
+    } while(current_word==new_current_word);
+    current_word = new_current_word;
     showWord(current_word);
 }
 
@@ -364,4 +463,21 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
 MainWindow::~MainWindow()
 {
     delete ui;
+    options_file->clearToWrite();
+    QTextStream temp(options_file);
+    temp << "position" << ' ' << this->x() << ' ' << this->y() <<endl;
+    temp << "order" << ' ' << this->order_method <<endl;
+    if(!playing) temp << "pause" <<endl;
+    if(staying_on_top) temp << "stayontop" <<endl;
+    unsigned lastword;
+    bool found=false;
+    for(unsigned i=0;i<Word::getCount();++i) {
+        if(words_head->at(i)==current_word) {
+            lastword=i;
+            found=true;
+            break;
+        }
+    }
+    if(found) temp << "lastword" << ' ' << lastword <<endl;
+    options_file->close();
 }

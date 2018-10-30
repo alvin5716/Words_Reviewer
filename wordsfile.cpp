@@ -15,6 +15,11 @@ void WordsFile::prepToWrite() {
     this->open(QIODevice::WriteOnly|QIODevice::Append);
 }
 
+void WordsFile::clearToWrite() {
+    if(!(!this)) this->close();
+    this->open(QIODevice::WriteOnly);
+}
+
 void WordsFile::prepToRead() {
     if(!(!this)) this->close();
     this->open(QIODevice::ReadOnly);

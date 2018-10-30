@@ -10,10 +10,12 @@ class InputForm : public QLineEdit
 public:
     InputForm(QWidget *parent=nullptr);
     void keyPressEvent(QKeyEvent *e);
+    void mousePressEvent(QMouseEvent *e);
 signals:
     void selectLastOne();
     void selectNextOne();
     void enterInputs();
+    void pressed();
 };
 
 #endif // INPUTFORM_H

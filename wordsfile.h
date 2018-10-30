@@ -10,6 +10,7 @@ public:
     WordsFile(CustomString file_name="words");
     void prepToWrite();
     void prepToRead();
+    void clearToWrite();
     bool deleteLine(int x); //return true if deletion successed
 };
 

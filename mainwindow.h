@@ -6,6 +6,7 @@
 #include "wordsfile.h"
 #include "word.h"
 #include "customstring.h"
+#include <QMessageBox>
 #include <QListWidgetItem>
 
 namespace Ui {
@@ -14,22 +15,25 @@ class MainWindow;
 
 namespace customEnum {
     enum pageNumber{wordListPage,wordInputPage,optionPage};
+    enum orderMethod{orderChronological,orderRandom};
 }
-enum class OrderMethod{chronological,random};
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
+    typedef void (MainWindow::*YesNoFunc)();
     explicit MainWindow(QWidget *parent = 0);
     void connectWordToUI(Word* word);
     void keyPressEvent(QKeyEvent *e);
     void setPreferredFontSize();
     void wordListOpen();
     void wordListClose();
-    void spawnWarningBox(CustomString content);
     void initSettings();
+    void deleteWordConfirmed();
+    QMessageBox* spawnWarningBox(CustomString content);
+    void spawnConfirmingBox(CustomString content, YesNoFunc yesFunc, YesNoFunc noFunc=nullptr);
     ~MainWindow();
 public slots:
     void showWord(Word* word);
@@ -46,14 +50,18 @@ public slots:
     void listButtonClicked();
     void minimizeButtonClicked();
     void deleteWordButtonClicked();
+    void stayOnTopButtonClick();
+    void searchListAndShow();
+    void searchFinish();
+    void searchStart();
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
 private:
     Ui::MainWindow *ui;
-    WordsFile *file;
+    WordsFile *words_file, *options_file;
     Word *words_head, *current_word, *words_tail;
     QTimer* timer;
-    bool playing, word_list_opening, minimizing;
-    OrderMethod order_method;
+    bool playing, word_list_opening, minimizing, staying_on_top;
+    customEnum::orderMethod order_method;
 };
 
 #endif // MAINWINDOW_H

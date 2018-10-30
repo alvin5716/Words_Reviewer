@@ -20,6 +20,7 @@ public:
     friend void deleteCurrentWord(Word*& words_head, Word*& words_tail, Word*& current_word);
     CustomString getEnglish() const;
     CustomString getPart() const;
+    CustomString getMeaning() const;
     ~Word();
 public slots:
     void getWordDataToUI();
