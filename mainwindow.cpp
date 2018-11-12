@@ -22,6 +22,12 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFocus();
     wordListClose();
     ui->stackedWidget->setCurrentIndex(customEnum::wordListPage);
+    //sliders
+    ui->intervalSlider->setRange(1,60);
+    ui->intervalSlider->setValue(20);
+    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),this,SLOT(intervalShow(int)));
+    connect(ui->intervalSlider,SIGNAL(actionTriggered(int)),this,SLOT(setFocus()));
+    connect(ui->intervalSlider,SIGNAL(sliderPressed()),this,SLOT(setFocus()));
     //buttons
     connect(ui->closeButton,SIGNAL(clicked(bool)),qApp,SLOT(quit()));
     connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(showNextWord()));
@@ -95,10 +101,11 @@ void MainWindow::initSettings() {
     }
     setPreferredFontSize();
     //timer
-    timer = new QTimer;
+    timer = new CustomTimer;
     timer->setInterval(20000);
-    connect(timer,&QTimer::timeout,this,&MainWindow::showNextWord);
+    connect(timer,&CustomTimer::timeout,this,&MainWindow::showNextWord);
     timer->start();
+    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),timer,SLOT(restartWithInterval(int)));
     //read options file
     lines_count=0;
     while(!this->options_file->atEnd()) {
@@ -127,12 +134,23 @@ void MainWindow::initSettings() {
                 this->playButtonClicked();
             } else if(strOption=="stayontop") {
                 this->stayOnTopButtonClick();
+            } else if(strOption=="interval") {
+                if(strsIn.length()<2) throw strsIn.length();
+                CustomString strX = strsIn.at(1);
+                int x=strX.toInt();
+                ui->intervalSlider->setValue(x);
+                timer->restartWithInterval(x);
+                this->intervalShow(x);
             }
         } catch(int args) {
             qDebug() << "Error: At File \"options\": Only got" << args << "arguments in Line" << lines_count;
         }
     }
     options_file->close();
+}
+
+void MainWindow::intervalShow(int interval) {
+    ui->strIntervalSecond->setText(CustomString().setNum(interval)+" sec");
 }
 
 void MainWindow::stayOnTopButtonClick() {
@@ -467,6 +485,7 @@ MainWindow::~MainWindow()
     QTextStream temp(options_file);
     temp << "position" << ' ' << this->x() << ' ' << this->y() <<endl;
     temp << "order" << ' ' << this->order_method <<endl;
+    temp << "interval" << ' ' << ui->intervalSlider->value() <<endl;
     if(!playing) temp << "pause" <<endl;
     if(staying_on_top) temp << "stayontop" <<endl;
     unsigned lastword;

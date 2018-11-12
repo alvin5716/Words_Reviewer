@@ -6,6 +6,7 @@
 #include "wordsfile.h"
 #include "word.h"
 #include "customstring.h"
+#include "customtimer.h"
 #include <QMessageBox>
 #include <QListWidgetItem>
 
@@ -54,12 +55,13 @@ public slots:
     void searchListAndShow();
     void searchFinish();
     void searchStart();
+    void intervalShow(int interval);
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
 private:
     Ui::MainWindow *ui;
     WordsFile *words_file, *options_file;
     Word *words_head, *current_word, *words_tail;
-    QTimer* timer;
+    CustomTimer* timer;
     bool playing, word_list_opening, minimizing, staying_on_top;
     customEnum::orderMethod order_method;
 };

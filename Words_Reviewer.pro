@@ -29,14 +29,16 @@ SOURCES += \
     word.cpp \
     wordsfile.cpp \
     customstring.cpp \
-    inputform.cpp
+    inputform.cpp \
+    customtimer.cpp
 
 HEADERS += \
         mainwindow.h \
     word.h \
     wordsfile.h \
     customstring.h \
-    inputform.h
+    inputform.h \
+    customtimer.h
 
 FORMS += \
         mainwindow.ui
