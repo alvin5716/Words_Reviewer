@@ -14,7 +14,7 @@ public:
     Word* at(unsigned index);
     Word* getNext() const;
     Word* getLast() const;
-    CustomString getWordData() const;
+    CustomString getWordData(bool onlyWord=false) const;
     static unsigned getCount();
     friend Word* pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning);
     friend void deleteCurrentWord(Word*& words_head, Word*& words_tail, Word*& current_word);
@@ -23,7 +23,7 @@ public:
     CustomString getMeaning() const;
     ~Word();
 public slots:
-    void getWordDataToUI();
+    void getWordDataToUI(bool onlyWord=false);
 signals:
     void giveWordData(QString);
 private:

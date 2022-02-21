@@ -45,8 +45,8 @@ void Word::printAllWords() const{
     }
 }
 
-void Word::getWordDataToUI() {
-    emit giveWordData(static_cast<QString>(getWordData()));
+void Word::getWordDataToUI(bool onlyWord) {
+    emit giveWordData(static_cast<QString>(getWordData(onlyWord)));
 }
 
 CustomString Word::getEnglish() const{
@@ -61,8 +61,8 @@ CustomString Word::getMeaning() const{
     return meaning;
 }
 
-CustomString Word::getWordData() const{
-    return english+" "+part+" "+meaning;
+CustomString Word::getWordData(bool onlyWord) const{
+    return onlyWord ? english : english+" "+part+" "+meaning;
 }
 
 Word* Word::at(unsigned index) {

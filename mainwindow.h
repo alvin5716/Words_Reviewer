@@ -27,7 +27,7 @@ public:
     typedef void (MainWindow::*YesNoFunc)();
     explicit MainWindow(QWidget *parent = 0);
     void connectWordToUI(Word* word);
-    void keyPressEvent(QKeyEvent *e);
+    void keyPressEvent(QKeyEvent *e) override;
     void setPreferredFontSize();
     void wordListOpen();
     void wordListClose();
@@ -37,6 +37,8 @@ public:
     void spawnConfirmingBox(CustomString content, YesNoFunc yesFunc, YesNoFunc noFunc=nullptr);
     ~MainWindow();
 public slots:
+    void mousePressEvent(QMouseEvent *e) override;
+    void mouseMoveEvent(QMouseEvent *e) override;
     void showWord(Word* word);
     void showNextWord();
     void showLastWord();
@@ -55,6 +57,8 @@ public slots:
     void searchListAndShow();
     void searchFinish();
     void searchStart();
+    void toggleOnlyWord();
+    void searchOnNet();
     void intervalShow(int interval);
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
 private:
@@ -63,6 +67,8 @@ private:
     Word *words_head, *current_word, *words_tail;
     CustomTimer* timer;
     bool playing, word_list_opening, minimizing, staying_on_top;
+    bool isOnlyWordShowing;
+    QPoint dragStartPos;
     customEnum::orderMethod order_method;
 };
 

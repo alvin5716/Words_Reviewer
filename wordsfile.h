@@ -7,7 +7,7 @@
 class WordsFile: public QFile
 {
 public:
-    WordsFile(CustomString file_name="words");
+    WordsFile(CustomString file_name);
     void prepToWrite();
     void prepToRead();
     void clearToWrite();

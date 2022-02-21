@@ -22,6 +22,9 @@
     <height>111111</height>
    </size>
   </property>
+  <property name="cursor">
+   <cursorShape>ArrowCursor</cursorShape>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -93,7 +96,7 @@ border: 1px solid #444;
      <rect>
       <x>10</x>
       <y>90</y>
-      <width>71</width>
+      <width>51</width>
       <height>31</height>
      </rect>
     </property>
@@ -133,7 +136,7 @@ border: 1px solid #444;
    <widget class="QPushButton" name="nextButton">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>310</x>
       <y>90</y>
       <width>41</width>
       <height>31</height>
@@ -154,7 +157,7 @@ border: 1px solid #444;
    <widget class="QPushButton" name="lastButton">
     <property name="geometry">
      <rect>
-      <x>260</x>
+      <x>170</x>
       <y>90</y>
       <width>41</width>
       <height>31</height>
@@ -175,7 +178,7 @@ border: 1px solid #444;
    <widget class="QPushButton" name="playButton">
     <property name="geometry">
      <rect>
-      <x>310</x>
+      <x>220</x>
       <y>90</y>
       <width>81</width>
       <height>31</height>
@@ -729,6 +732,48 @@ border: 1px solid #444;
     </property>
     <property name="text">
      <string>-</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="searchOnNetButton">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>90</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Search</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="onlyWordButton">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>90</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Meaning</string>
     </property>
    </widget>
   </widget>

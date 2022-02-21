@@ -5,13 +5,16 @@
 #include <QDebug>
 #include <QDesktopWidget>
 #include <QKeyEvent>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    words_file(new WordsFile), options_file(new WordsFile("options")),
+    words_file(new WordsFile("words.txt")), options_file(new WordsFile("options.txt")),
     words_head(nullptr), current_word(nullptr), words_tail(nullptr),
     playing(true),word_list_opening(false), minimizing(false), staying_on_top(false),
+    isOnlyWordShowing(false),
+    dragStartPos(QPoint(0,0)),
     order_method(customEnum::orderChronological)
 {
     ui->setupUi(this);
@@ -46,9 +49,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->deleteWordButton,SIGNAL(clicked(bool)),this,SLOT(deleteWordButtonClicked()));
     connect(ui->minimizeButton,SIGNAL(clicked(bool)),this,SLOT(minimizeButtonClicked()));
     connect(ui->minimizeButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(changeOrderMethod()));
+    connect(ui->onlyWordButton,SIGNAL(clicked(bool)),this,SLOT(toggleOnlyWord()));
+    connect(ui->searchOnNetButton,SIGNAL(clicked(bool)),this,SLOT(searchOnNet()));
     connect(ui->optionsButton,SIGNAL(clicked(bool)),this,SLOT(showOptions()));
     connect(ui->backOptionButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
+    connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(changeOrderMethod()));
     connect(ui->stayingOnTopButton,SIGNAL(clicked(bool)),this,SLOT(stayOnTopButtonClick()));
     //forms
     connect(ui->englishInput,SIGNAL(selectNextOne()),ui->partInput,SLOT(setFocus()));
@@ -62,6 +67,45 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->searchInput,SIGNAL(pressed()),this,SLOT(searchStart()));
     connect(ui->searchInput,SIGNAL(editingFinished()),this,SLOT(searchFinish()));
     initSettings();
+    //cursor
+    QVector<QWidget*> pointerCursorWdgts({
+        ui->searchOnNetButton, ui->onlyWordButton, ui->closeButton, ui->minimizeButton,
+        ui->nextButton, ui->lastButton, ui->playButton,
+        ui->listButton, ui->enterInputButton, ui->clearInputButton,
+        ui->backInputButton, ui->addNewWordButton, ui->deleteWordButton, ui->optionsButton,
+        ui->backOptionButton, ui->stayingOnTopButton, ui->playingOrderButton, ui->intervalSlider
+    });
+    for(QWidget* w: pointerCursorWdgts)
+        w->setCursor(Qt::PointingHandCursor);
+}
+
+void MainWindow::searchOnNet() {
+    if(!this->current_word) return;
+    QString url_str("https://dictionary.cambridge.org/zht/%E8%A9%9E%E5%85%B8/%E8%8B%B1%E8%AA%9E-%E6%BC%A2%E8%AA%9E-%E7%B9%81%E9%AB%94/"
+                    +this->current_word->getEnglish()
+    );
+    QUrl url(url_str);
+    QDesktopServices::openUrl(url);
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *e)
+{
+    this->dragStartPos = e->globalPos();
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *e)
+{
+    const QPoint distant = e->globalPos() - this->dragStartPos;
+    move(this->x()+distant.x(), this->y()+distant.y());
+    this->dragStartPos = e->globalPos();
+}
+
+
+void MainWindow::toggleOnlyWord() {
+    isOnlyWordShowing = !isOnlyWordShowing;
+    ui->onlyWordButton->setText(this->isOnlyWordShowing?"Word":"Meaning");
+    if(!this->current_word) return;
+    showWord(this->current_word);
 }
 
 void MainWindow::initSettings() {
@@ -86,7 +130,7 @@ void MainWindow::initSettings() {
             //connect
             this->connectWordToUI(words_head);
         } catch(int size) {
-            qDebug() << "Error: At File \"words\": Only got" << size << "string in Line" << lines_count;
+            qDebug() << "Error: At File \"" + words_file->fileName() + "\": Only got" << size << "string in Line" << lines_count;
             qApp->quit();
         }
     }
@@ -242,7 +286,11 @@ void MainWindow::minimizeButtonClicked() {
 }
 
 void MainWindow::deleteWordButtonClicked() {
-    spawnConfirmingBox("Delete: \""+(current_word->getWordData()+"\"?"),MainWindow::deleteWordConfirmed);
+    QString content("Delete: \""+(current_word->getWordData()+"\"?"));
+    if(playing) timer->stop();
+    QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
+    if(confirming_box==QMessageBox::Yes) this->deleteWordConfirmed();
+    if(playing) timer->start();
 }
 
 void MainWindow::deleteWordConfirmed() {
@@ -309,17 +357,6 @@ QMessageBox* MainWindow::spawnWarningBox(CustomString content) {
     return warning_box;
 }
 
-void MainWindow::spawnConfirmingBox(CustomString content, YesNoFunc yesFunc, YesNoFunc noFunc) {
-    if(playing) timer->stop();
-    QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
-    if(confirming_box==QMessageBox::Yes) {
-        if(yesFunc!=nullptr) (this->*yesFunc)();
-    } else {
-        if(noFunc!=nullptr) (this->*noFunc)();
-    }
-    if(playing) timer->start();
-}
-
 void MainWindow::prepToAddNewWord() {
     ui->stackedWidget->setCurrentIndex(customEnum::wordInputPage);
 }
@@ -348,11 +385,11 @@ void MainWindow::showWord(Word *word) {
         ui->strWord->setText("-");
         return;
     }
-    word->getWordDataToUI();
+    word->getWordDataToUI(isOnlyWordShowing);
     current_word=word;
     setPreferredFontSize();
     if(playing) timer->start();
-    qDebug() << current_word->getWordData();
+    //qDebug() << current_word->getWordData();
 }
 
 void MainWindow::playButtonClicked() {
