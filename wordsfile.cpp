@@ -28,7 +28,7 @@ void WordsFile::prepToRead() {
 bool WordsFile::deleteLine(int x) {
     CustomString line;
     this->prepToRead();
-    WordsFile temp("words_temp");
+    WordsFile temp("wordsfile_temp.txt");
     temp.prepToWrite();
     QTextStream temp_text(&temp);
     temp_text.setCodec("UTF-8");
@@ -41,7 +41,7 @@ bool WordsFile::deleteLine(int x) {
     this->close();
     temp.close();
 
-    remove("words");
-    rename("words_temp","words");
+    remove(this->fileName());
+    rename("wordsfile_temp.txt",this->fileName());
     return i>=x;
 }
