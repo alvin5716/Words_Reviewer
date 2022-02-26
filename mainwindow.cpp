@@ -133,9 +133,9 @@ void MainWindow::initSettings() {
             part.replaceUnderlineToSpace();
             meaning.replaceUnderlineToSpace();
             //create new word and push it into data
-            pushNewWord(words_head,words_tail,english,part,meaning);
+            Word* new_word = pushNewWord(words_head,words_tail,english,part,meaning);
             //connect
-            this->connectWordToUI(words_head);
+            this->connectWordToUI(new_word);
         } catch(int size) {
             qDebug() << "Error: At File \"" + words_file->fileName() + "\": Only got" << size << "string in Line" << lines_count;
             qApp->quit();
@@ -330,7 +330,7 @@ void MainWindow::submitInput() {
             if(ptr->getEnglish()==english && ptr->getPart()==part)
                 throw 2;
         current_word = pushNewWord(words_head,words_tail,english,part,meaning);
-        this->connectWordToUI(words_head);
+        this->connectWordToUI(current_word);
         showWord(current_word);
         //file
         english.replaceSpaceToUnderline();

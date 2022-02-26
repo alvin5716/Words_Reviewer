@@ -11,11 +11,11 @@ Word::Word(CustomString english, CustomString part, CustomString meaning):
 
 Word* pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning) {
     Word* new_word = new Word(english,part,meaning);
-    if(words_head==nullptr) words_tail=new_word;
-    Word* ptr=words_head;
-    words_head=new_word;
-    new_word->next=ptr;
-    if(ptr!=nullptr) ptr->last=new_word;
+    Word* ptr=words_tail;
+    words_tail=new_word;
+    new_word->last=ptr;
+    if(ptr!=nullptr) ptr->next=new_word;
+    else words_head=new_word;
     return new_word;
 }
 
