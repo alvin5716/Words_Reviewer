@@ -109,15 +109,22 @@ void MainWindow::toggleOnlyWord() {
 }
 
 void MainWindow::initSettings() {
+    //regex for checking format later
+    QRegExp regex("\\S+\\s+(?:\\0050\\S+\\0056\\0051)+\\s+\\S+");
     //read word file
     unsigned lines_count=0;
     while(!words_file->atEnd()) {
         ++lines_count;
+        //read line
         CustomString strIn = words_file->readLine();
+        //check format of the line
+        if(regex.indexIn(strIn) != 0) continue;
+        //start split the line
         QStringList strsIn = strIn.split(' ');
         try {
-            //check format of file
+            //check format of the splited line
             if(strsIn.size()<3) throw strsIn.size();
+            //The line is in correct format. Start parse the line into word data
             CustomString english(strsIn.at(0)), part(strsIn.at(1)), meaning(strsIn.at(2));
             //chop \n and \r
             meaning.chopNewLineChar();
