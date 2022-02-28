@@ -11,11 +11,11 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     words_file(new WordsFile("words.txt")), options_file(new WordsFile("options.txt")),
-    words_head(nullptr), current_word(nullptr), words_tail(nullptr),
-    playing(true),word_list_opening(false), minimizing(false), staying_on_top(false),
-    isOnlyWordShowing(false),
+    words(new WordGroup),
+    playing(true),more_tab_opening(false), minimizing(false), staying_on_top(false),
+    word_mode(WordShowingMode::AllShowing),
     dragStartPos(QPoint(0,0)),
-    order_method(customEnum::orderChronological)
+    order_method(CustomEnum::OrderChronological)
 {
     ui->setupUi(this);
     //widget settings
@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setGeometry(QApplication::desktop()->screenGeometry().width()/2-346,0,692,131);
     this->setFocusPolicy(Qt::NoFocus);
     this->setFocus();
-    wordListClose();
-    ui->stackedWidget->setCurrentIndex(customEnum::wordListPage);
+    moreTabClose();
+    ui->stackedWidget->setCurrentIndex(CustomEnum::MainPage);
     //sliders
     ui->intervalSlider->setRange(1,60);
     ui->intervalSlider->setValue(20);
@@ -32,27 +32,30 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->intervalSlider,SIGNAL(actionTriggered(int)),this,SLOT(setFocus()));
     connect(ui->intervalSlider,SIGNAL(sliderPressed()),this,SLOT(setFocus()));
     //buttons
-    connect(ui->closeButton,SIGNAL(clicked(bool)),qApp,SLOT(quit()));
+    connect(ui->closeButton,SIGNAL(clicked(bool)),this,SLOT(closeButtonClicked()));
     connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(showNextWord()));
     connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
     connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(showLastWord()));
     connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
     connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(playButtonClicked()));
     connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
+    connect(ui->moreButton,SIGNAL(clicked(bool)),this,SLOT(moreButtonClicked()));
+    connect(ui->moreButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
     connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(listButtonClicked()));
     connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
     connect(ui->wordList,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(FindItemAndShowWord(QListWidgetItem*)));
     connect(ui->addNewWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToAddNewWord()));
-    connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
+    connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(listButtonClicked()));
     connect(ui->enterInputButton,SIGNAL(clicked(bool)),this,SLOT(submitInput()));
     connect(ui->clearInputButton,SIGNAL(clicked(bool)),this,SLOT(clearInputs()));
     connect(ui->deleteWordButton,SIGNAL(clicked(bool)),this,SLOT(deleteWordButtonClicked()));
     connect(ui->minimizeButton,SIGNAL(clicked(bool)),this,SLOT(minimizeButtonClicked()));
     connect(ui->minimizeButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->onlyWordButton,SIGNAL(clicked(bool)),this,SLOT(toggleOnlyWord()));
+    connect(ui->showingModeButton,SIGNAL(clicked(bool)),this,SLOT(changeWordMode()));
     connect(ui->searchOnNetButton,SIGNAL(clicked(bool)),this,SLOT(searchOnNet()));
     connect(ui->optionsButton,SIGNAL(clicked(bool)),this,SLOT(showOptions()));
-    connect(ui->backOptionButton,SIGNAL(clicked(bool)),this,SLOT(listWords()));
+    connect(ui->backOptionButton,SIGNAL(clicked(bool)),this,SLOT(backToMainPage()));
+    connect(ui->backWordEditButton,SIGNAL(clicked(bool)),this,SLOT(backToMainPage()));
     connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(changeOrderMethod()));
     connect(ui->stayingOnTopButton,SIGNAL(clicked(bool)),this,SLOT(stayOnTopButtonClick()));
     //forms
@@ -69,20 +72,36 @@ MainWindow::MainWindow(QWidget *parent) :
     initSettings();
     //cursor
     QVector<QWidget*> pointerCursorWdgts({
-        ui->searchOnNetButton, ui->onlyWordButton, ui->closeButton, ui->minimizeButton,
+        ui->moreButton, ui->showingModeButton, ui->closeButton, ui->minimizeButton,
         ui->nextButton, ui->lastButton, ui->playButton,
-        ui->listButton, ui->enterInputButton, ui->clearInputButton,
-        ui->backInputButton, ui->addNewWordButton, ui->deleteWordButton, ui->optionsButton,
-        ui->backOptionButton, ui->stayingOnTopButton, ui->playingOrderButton, ui->intervalSlider
+        ui->listButton, ui->searchOnNetButton, ui->optionsButton,
+        ui->enterInputButton, ui->clearInputButton, ui->backInputButton,
+        ui->addNewWordButton, ui->deleteWordButton, ui->backWordEditButton,
+        ui->stayingOnTopButton, ui->playingOrderButton, ui->intervalSlider, ui->backOptionButton,
+
     });
     for(QWidget* w: pointerCursorWdgts)
         w->setCursor(Qt::PointingHandCursor);
 }
 
+void MainWindow::listButtonClicked() {
+    ui->stackedWidget->setCurrentIndex(CustomEnum::WordListPage);
+    ui->wordList->clear();
+    words->searchWordStart();
+    const Word* searched_word = words->searchWord();
+    while(searched_word != nullptr) {
+        QListWidgetItem *item= new QListWidgetItem(static_cast<QString>(searched_word->getWordData()));
+        item->setFont(QFont("微軟正黑體",14));
+        ui->wordList->addItem(item);
+        searched_word = words->searchWord();
+    }
+}
+
 void MainWindow::searchOnNet() {
-    if(!this->current_word) return;
+    const Word* current_word = words->getCurrentWord();
+    if(!current_word) return;
     QString url_str("https://dictionary.cambridge.org/zht/%E8%A9%9E%E5%85%B8/%E8%8B%B1%E8%AA%9E-%E6%BC%A2%E8%AA%9E-%E7%B9%81%E9%AB%94/"
-                    +this->current_word->getEnglish()
+                    +current_word->getEnglish()
     );
     QUrl url(url_str);
     QDesktopServices::openUrl(url);
@@ -101,11 +120,9 @@ void MainWindow::mouseMoveEvent(QMouseEvent *e)
 }
 
 
-void MainWindow::toggleOnlyWord() {
-    isOnlyWordShowing = !isOnlyWordShowing;
-    ui->onlyWordButton->setText(this->isOnlyWordShowing?"Word":"Meaning");
-    if(!this->current_word) return;
-    showWord(this->current_word);
+void MainWindow::changeWordMode() {
+    this->word_mode = WordShowingMode::nextMode(word_mode);
+    showCurrentWord();
 }
 
 void MainWindow::initSettings() {
@@ -133,24 +150,13 @@ void MainWindow::initSettings() {
             part.replaceUnderlineToSpace();
             meaning.replaceUnderlineToSpace();
             //create new word and push it into data
-            Word* new_word = pushNewWord(words_head,words_tail,english,part,meaning);
-            //connect
-            this->connectWordToUI(new_word);
+            words->pushNewWord(english,part,meaning);
         } catch(int size) {
             qDebug() << "Error: At File \"" + words_file->fileName() + "\": Only got" << size << "string in Line" << lines_count;
             qApp->quit();
         }
     }
     words_file->close();
-    //show word settings
-    if(words_head!=nullptr) {
-        qsrand(time(NULL));
-        current_word = words_head->at(qrand()%Word::getCount());
-        current_word->getWordDataToUI();
-    } else {
-        ui->strWord->setText("-");
-    }
-    setPreferredFontSize();
     //timer
     timer = new CustomTimer;
     timer->setInterval(20000);
@@ -180,7 +186,7 @@ void MainWindow::initSettings() {
                 if(strsIn.length()<2) throw strsIn.length();
                 CustomString strX = strsIn.at(1);
                 int x=strX.toInt();
-                showWord(words_head->at(x));
+                words->switchToWordByIndex(x);
             } else if(strOption=="pause") {
                 this->playButtonClicked();
             } else if(strOption=="stayontop") {
@@ -198,6 +204,9 @@ void MainWindow::initSettings() {
         }
     }
     options_file->close();
+    //show word
+    connect(words,SIGNAL(giveWordData(QString)),ui->strWord,SLOT(setText(QString)));
+    showCurrentWord();
 }
 
 void MainWindow::intervalShow(int interval) {
@@ -226,40 +235,33 @@ void MainWindow::searchStart() {
 }
 
 void MainWindow::showOptions() {
-    ui->stackedWidget->setCurrentIndex(customEnum::optionPage);
+    ui->stackedWidget->setCurrentIndex(CustomEnum::OptionPage);
 }
 
 void MainWindow::searchListAndShow() {
     CustomString searchWord = ui->searchInput->text();
-    if(searchWord=="") {
-        this->listWords();
-        return;
-    }
-    if(searchWord=="Search...") {
-        ui->searchInput->setText("");
-    }
-    ui->stackedWidget->setCurrentIndex(customEnum::wordListPage);
+    ui->stackedWidget->setCurrentIndex(CustomEnum::WordListPage);
     ui->wordList->clear();
-    for(Word* ptr=words_head;ptr!=nullptr;ptr=ptr->getNext()) {
-        if(CustomString(ptr->getEnglish()).startsWith(static_cast<QString>(searchWord)) ||
-                CustomString(ptr->getMeaning()).startsWith(static_cast<QString>(searchWord))) {
-            QListWidgetItem *item= new QListWidgetItem(static_cast<QString>(ptr->getWordData()));
-            item->setFont(QFont("微軟正黑體",14));
-            ui->wordList->addItem(item);
-        }
+    words->searchWordStart(searchWord);
+    const Word* searched_word = words->searchWord();
+    while(searched_word != nullptr) {
+        QListWidgetItem *item= new QListWidgetItem(static_cast<QString>(searched_word->getWordData()));
+        item->setFont(QFont("微軟正黑體",14));
+        ui->wordList->addItem(item);
+        searched_word = words->searchWord();
     }
 }
 
 void MainWindow::changeOrderMethod() {
     switch(order_method) {
-    case customEnum::orderChronological:
-        order_method=customEnum::orderRandom;
+    case CustomEnum::OrderChronological:
+        order_method=CustomEnum::OrderRandom;
         ui->playingOrderButton->setText("Random");
         timer->disconnect();
         connect(timer,SIGNAL(timeout()),this,SLOT(showRandomWord()));
         break;
-    case customEnum::orderRandom:
-        order_method=customEnum::orderChronological;
+    case CustomEnum::OrderRandom:
+        order_method=CustomEnum::OrderChronological;
         ui->playingOrderButton->setText("Chronological");
         timer->disconnect();
         connect(timer,SIGNAL(timeout()),this,SLOT(showNextWord()));
@@ -279,7 +281,7 @@ void MainWindow::minimizeButtonClicked() {
         this->setGeometry(this->x(),this->y(),692,131);
         setPreferredFontSize();
     } else {
-        if(word_list_opening) listButtonClicked();
+        if(more_tab_opening) moreButtonClicked();
         ui->listButton->hide();
         ui->playButton->hide();
         ui->strWord->hide();
@@ -293,7 +295,7 @@ void MainWindow::minimizeButtonClicked() {
 }
 
 void MainWindow::deleteWordButtonClicked() {
-    QString content("Delete: \""+(current_word->getWordData()+"\"?"));
+    QString content("Delete: \""+(words->getCurrentWord()->getWordData()+"\"?"));
     if(playing) timer->stop();
     QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
     if(confirming_box==QMessageBox::Yes) this->deleteWordConfirmed();
@@ -302,15 +304,15 @@ void MainWindow::deleteWordButtonClicked() {
 
 void MainWindow::deleteWordConfirmed() {
     for(int i=0;i<ui->wordList->count();++i) {
-        if(ui->wordList->item(i)->text()==current_word->getWordData()) {
+        if(ui->wordList->item(i)->text()==words->getCurrentWord()->getWordData()) {
             words_file->deleteLine(ui->wordList->count()-i);
             QListWidgetItem *removed_item = ui->wordList->takeItem(i);
             delete removed_item;
             break;
         }
     }
-    deleteCurrentWord(words_head,words_tail,current_word);
-    showWord(current_word);
+    words->deleteCurrentWord();
+    showCurrentWord();
 }
 
 void MainWindow::clearInputs() {
@@ -326,12 +328,9 @@ void MainWindow::submitInput() {
             throw 1;
         //linked-list and set it to current word
         part.partOfSpeechSetting();
-        for(Word* ptr=words_head;ptr!=nullptr;ptr=ptr->getNext())
-            if(ptr->getEnglish()==english && ptr->getPart()==part)
-                throw 2;
-        current_word = pushNewWord(words_head,words_tail,english,part,meaning);
-        this->connectWordToUI(current_word);
-        showWord(current_word);
+        if(words->isWordExisted(english,part)) throw 2;
+        words->pushNewWord(english,part,meaning);
+        showCurrentWord();
         //file
         english.replaceSpaceToUnderline();
         meaning.replaceSpaceToUnderline();
@@ -365,99 +364,75 @@ QMessageBox* MainWindow::spawnWarningBox(CustomString content) {
 }
 
 void MainWindow::prepToAddNewWord() {
-    ui->stackedWidget->setCurrentIndex(customEnum::wordInputPage);
-}
-
-void MainWindow::listWords() {
-    ui->stackedWidget->setCurrentIndex(customEnum::wordListPage);
-    ui->wordList->clear();
-    for(Word* ptr=words_head;ptr!=nullptr;ptr=ptr->getNext()) {
-        QListWidgetItem *item= new QListWidgetItem(static_cast<QString>(ptr->getWordData()));
-        item->setFont(QFont("微軟正黑體",14));
-        ui->wordList->addItem(item);
-    }
+    ui->stackedWidget->setCurrentIndex(CustomEnum::WordInputPage);
 }
 
 void MainWindow::FindItemAndShowWord(QListWidgetItem* clicked_item) {
-    for(Word* ptr=words_head;ptr!=nullptr;ptr=ptr->getNext()) {
-        if(clicked_item->text()==ptr->getWordData()) {
-            showWord(ptr);
-            break;
-        }
-    }
+    words->switchToWordByData(clicked_item->text());
+    showCurrentWord();
 }
 
-void MainWindow::showWord(Word *word) {
-    if(word==nullptr) {
-        ui->strWord->setText("-");
-        return;
-    }
-    word->getWordDataToUI(isOnlyWordShowing);
-    current_word=word;
+void MainWindow::showCurrentWord() {
+    words->getWordDataToUI(word_mode);
     setPreferredFontSize();
     if(playing) timer->start();
-    //qDebug() << current_word->getWordData();
+}
+
+void MainWindow::closeButtonClicked() {
+    QString content("Do you really want to close?");
+    QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
+    if(confirming_box==QMessageBox::Yes) qApp->quit();
 }
 
 void MainWindow::playButtonClicked() {
     if(this->playing) {
         timer->stop();
-        ui->playButton->setText("Play");
+        ui->playButton->setText("Paused");
     } else {
         timer->start();
-        ui->playButton->setText("Pause");
+        ui->playButton->setText("Playing");
     }
     playing=!playing;
 }
 
-void MainWindow::listButtonClicked() {
-    if(this->word_list_opening) {
-        wordListClose();
+void MainWindow::moreButtonClicked() {
+    if(this->more_tab_opening) {
+        moreTabClose();
     } else {
-        wordListOpen();
+        moreTabOpen();
     }
-    word_list_opening=!word_list_opening;
+    more_tab_opening=!more_tab_opening;
 }
 
-void MainWindow::wordListOpen() {
-    ui->listButton->setText("List Close");
-    ui->listButton->setGeometry(ui->listButton->x(),ui->listButton->y(),121,ui->listButton->height());
+void MainWindow::backToMainPage() {
+    ui->stackedWidget->setCurrentIndex(CustomEnum::MainPage);
+}
+
+void MainWindow::moreTabOpen() {
+    ui->moreButton->setText("Close");
     ui->stackedWidget->show();
     this->setGeometry(this->geometry().x(),this->geometry().y(),this->geometry().width(),561);
-    listWords();
 }
 
-void MainWindow::wordListClose() {
-    ui->listButton->setText("List");
-    ui->listButton->setGeometry(ui->listButton->x(),ui->listButton->y(),71,ui->listButton->height());
+void MainWindow::moreTabClose() {
+    ui->moreButton->setText("More");
     ui->stackedWidget->hide();
     this->setGeometry(this->geometry().x(),this->geometry().y(),this->geometry().width(),131);
-    ui->wordList->clear();
 }
 
 void MainWindow::showNextWord() {
-    if(current_word!=nullptr && current_word->getNext()!=nullptr) {
-        showWord(current_word->getNext());
-    } else if(words_head!=nullptr) {
-        showWord(words_head);
-    } else {
-        ui->strWord->setText("-");
-        setPreferredFontSize();
-    }
+    words->switchToNextWord();
+    showCurrentWord();
 }
 
 void MainWindow::showLastWord() {
-    if(current_word!=nullptr && current_word->getLast()!=nullptr) {
-        showWord(current_word->getLast());
-    } else if(words_tail!=nullptr) {
-        showWord(words_tail);
-    } else {
-        ui->strWord->setText("-");
-        setPreferredFontSize();
-    }
+    words->switchToLastWord();
+    showCurrentWord();
 }
 
 void MainWindow::showRandomWord() {
+    //=
+    /*
     if(words_head==nullptr) {
         ui->strWord->setText("-");
         setPreferredFontSize();
@@ -469,11 +444,7 @@ void MainWindow::showRandomWord() {
     } while(current_word==new_current_word);
     current_word = new_current_word;
     showWord(current_word);
-}
-
-void MainWindow::connectWordToUI(Word* word) {
-    if(word==nullptr) return;
-    connect(word,SIGNAL(giveWordData(QString)),ui->strWord,SLOT(setText(QString)));
+    */
 }
 
 void MainWindow::setPreferredFontSize() {
@@ -485,37 +456,14 @@ void MainWindow::setPreferredFontSize() {
 
 void MainWindow::keyPressEvent(QKeyEvent *e) {
     switch (e->key()) {
-    case Qt::Key_W:
-        this->setGeometry(this->geometry().x(),this->geometry().y()-5,this->geometry().width(),this->geometry().height());
-        break;
-    case Qt::Key_A:
-        this->setGeometry(this->geometry().x()-5,this->geometry().y(),this->geometry().width(),this->geometry().height());
-        break;
-    case Qt::Key_S:
-        this->setGeometry(this->geometry().x(),this->geometry().y()+5,this->geometry().width(),this->geometry().height());
-        break;
-    case Qt::Key_D:
-        this->setGeometry(this->geometry().x()+5,this->geometry().y(),this->geometry().width(),this->geometry().height());
-        break;
     case Qt::Key_Left:
         this->showLastWord();
         break;
     case Qt::Key_Right:
         this->showNextWord();
         break;
-    case Qt::Key_X:
-        qApp->quit();
-        break;
     case Qt::Key_Space:
-    case Qt::Key_P:
         playButtonClicked();
-        break;
-    case Qt::Key_L:
-        listButtonClicked();
-        break;
-    case Qt::Key_Minus:
-    case Qt::Key_M:
-        minimizeButtonClicked();
         break;
     default:
         break;
@@ -524,7 +472,6 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
 
 MainWindow::~MainWindow()
 {
-    delete ui;
     options_file->clearToWrite();
     QTextStream temp(options_file);
     temp << "position" << ' ' << this->x() << ' ' << this->y() <<endl;
@@ -532,15 +479,13 @@ MainWindow::~MainWindow()
     temp << "interval" << ' ' << ui->intervalSlider->value() <<endl;
     if(!playing) temp << "pause" <<endl;
     if(staying_on_top) temp << "stayontop" <<endl;
-    unsigned lastword;
-    bool found=false;
-    for(unsigned i=0;i<Word::getCount();++i) {
-        if(words_head->at(i)==current_word) {
-            lastword=i;
-            found=true;
-            break;
-        }
-    }
-    if(found) temp << "lastword" << ' ' << lastword <<endl;
+    temp << "lastword" << ' ' << words->getCurrentIndex() <<endl;
     options_file->close();
+    delete options_file;
+
+    words_file->close();
+    delete words_file;
+    delete words;
+    delete timer;
+    delete ui;
 }

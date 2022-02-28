@@ -1,52 +1,16 @@
 #include "word.h"
 
-unsigned Word::count=0;
-
 Word::Word(CustomString english, CustomString part, CustomString meaning):
     english(english), part(part), meaning(meaning),
     next(nullptr), last(nullptr)
 {
-    ++count;
-}
 
-Word* pushNewWord(Word*& words_head, Word*& words_tail, CustomString english, CustomString part, CustomString meaning) {
-    Word* new_word = new Word(english,part,meaning);
-    Word* ptr=words_tail;
-    words_tail=new_word;
-    new_word->last=ptr;
-    if(ptr!=nullptr) ptr->next=new_word;
-    else words_head=new_word;
-    return new_word;
-}
-
-void deleteCurrentWord(Word*& words_head, Word*& words_tail, Word*& current_word) {
-    if(current_word==nullptr) return;
-    Word* temp=current_word;
-    if(words_head==words_tail) words_head=words_tail=current_word=nullptr;
-    else if(current_word==words_tail) {
-        words_tail=current_word->last;
-        current_word->last->next=nullptr;
-        current_word=words_head;
-    } else if(current_word==words_head) {
-        words_head=current_word->next;
-        current_word->next->last=nullptr;
-        current_word=current_word->next;
-    } else {
-        current_word->last->next=current_word->next;
-        current_word->next->last=current_word->last;
-        current_word=current_word->next;
-    }
-    delete temp;
 }
 
 void Word::printAllWords() const{
     for(Word const* ptr=this; ptr!=nullptr; ptr=ptr->next) {
         qDebug() << ptr->english << ptr->part << ptr->meaning;
     }
-}
-
-void Word::getWordDataToUI(bool onlyWord) {
-    emit giveWordData(static_cast<QString>(getWordData(onlyWord)));
 }
 
 CustomString Word::getEnglish() const{
@@ -61,26 +25,39 @@ CustomString Word::getMeaning() const{
     return meaning;
 }
 
-CustomString Word::getWordData(bool onlyWord) const{
-    return onlyWord ? english : english+" "+part+" "+meaning;
+CustomString Word::getWordData(WordShowingMode::Mode onlyWord) const{
+    switch (onlyWord) {
+    case WordShowingMode::AllShowing:
+        return english+" "+part+" "+meaning;
+    case WordShowingMode::WordShowing:
+        return english;
+    case WordShowingMode::MeaningNotShowing:
+        return english+" "+part;
+    case WordShowingMode::MeaningShowing:
+        return meaning;
+    case WordShowingMode::WordNotShowing:
+        return part+" "+meaning;
+    case WordShowingMode::PartNotShowing:
+        return english+" "+meaning;
+    default:
+        qDebug() << "No such mode, nextMode() failed.";
+        return english+" "+part+" "+meaning;
+    }
 }
 
-Word* Word::at(unsigned index) {
-    unsigned i=0;
-    Word* ptr=this;
-    for(; ptr!=nullptr && i<index; ptr=ptr->next) ++i;
-    return ptr;
-}
 Word* Word::getNext() const{
     return this->next;
 }
 Word* Word::getLast() const{
     return this->last;
 }
-unsigned Word::getCount() {
-    return count;
+void Word::setNext(Word* next) {
+    this->next = next;
+}
+void Word::setLast(Word* last) {
+    this->last = last;
 }
 
 Word::~Word() {
-    --count;
+
 }

@@ -27,18 +27,22 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     word.cpp \
+    wordgroup.cpp \
     wordsfile.cpp \
     customstring.cpp \
     inputform.cpp \
-    customtimer.cpp
+    customtimer.cpp \
+    wordshowingmode.cpp
 
 HEADERS += \
         mainwindow.h \
     word.h \
+    wordgroup.h \
     wordsfile.h \
     customstring.h \
     inputform.h \
-    customtimer.h
+    customtimer.h \
+    wordshowingmode.h
 
 FORMS += \
         mainwindow.ui

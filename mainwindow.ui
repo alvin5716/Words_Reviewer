@@ -91,12 +91,12 @@ border: 1px solid #444;
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QPushButton" name="listButton">
+   <widget class="QPushButton" name="moreButton">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>90</y>
-      <width>51</width>
+      <width>71</width>
       <height>31</height>
      </rect>
     </property>
@@ -109,7 +109,7 @@ border: 1px solid #444;
      </font>
     </property>
     <property name="text">
-     <string>List</string>
+     <string>More</string>
     </property>
    </widget>
    <widget class="QPushButton" name="closeButton">
@@ -136,7 +136,7 @@ border: 1px solid #444;
    <widget class="QPushButton" name="nextButton">
     <property name="geometry">
      <rect>
-      <x>310</x>
+      <x>400</x>
       <y>90</y>
       <width>41</width>
       <height>31</height>
@@ -157,7 +157,7 @@ border: 1px solid #444;
    <widget class="QPushButton" name="lastButton">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>250</x>
       <y>90</y>
       <width>41</width>
       <height>31</height>
@@ -178,9 +178,9 @@ border: 1px solid #444;
    <widget class="QPushButton" name="playButton">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>300</x>
       <y>90</y>
-      <width>81</width>
+      <width>91</width>
       <height>31</height>
      </rect>
     </property>
@@ -193,7 +193,7 @@ border: 1px solid #444;
      </font>
     </property>
     <property name="text">
-     <string>Pause</string>
+     <string>Playing</string>
     </property>
    </widget>
    <widget class="QStackedWidget" name="stackedWidget">
@@ -208,6 +208,134 @@ border: 1px solid #444;
     <property name="currentIndex">
      <number>2</number>
     </property>
+    <widget class="QWidget" name="mainPage">
+     <widget class="QPushButton" name="listButton">
+      <property name="geometry">
+       <rect>
+        <x>70</x>
+        <y>60</y>
+        <width>141</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>16</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Words</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="optionsButton">
+      <property name="geometry">
+       <rect>
+        <x>70</x>
+        <y>270</y>
+        <width>141</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>16</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Settings</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="GroupButton">
+      <property name="geometry">
+       <rect>
+        <x>70</x>
+        <y>160</y>
+        <width>141</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>16</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Groups</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_4">
+      <property name="geometry">
+       <rect>
+        <x>240</x>
+        <y>60</y>
+        <width>351</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Manage all words in current group.</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>240</x>
+        <y>160</y>
+        <width>351</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Manage all word groups.</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_6">
+      <property name="geometry">
+       <rect>
+        <x>240</x>
+        <y>270</y>
+        <width>351</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Manage all settings of this app.</string>
+      </property>
+     </widget>
+    </widget>
     <widget class="QWidget" name="wordListPage">
      <widget class="QListWidget" name="wordList">
       <property name="geometry">
@@ -222,7 +350,7 @@ border: 1px solid #444;
      <widget class="QPushButton" name="addNewWordButton">
       <property name="geometry">
        <rect>
-        <x>140</x>
+        <x>0</x>
         <y>390</y>
         <width>111</width>
         <height>30</height>
@@ -237,15 +365,15 @@ border: 1px solid #444;
        </font>
       </property>
       <property name="text">
-       <string>Add</string>
+       <string>Add word</string>
       </property>
      </widget>
      <widget class="QPushButton" name="deleteWordButton">
       <property name="geometry">
        <rect>
-        <x>280</x>
+        <x>120</x>
         <y>390</y>
-        <width>111</width>
+        <width>131</width>
         <height>30</height>
        </rect>
       </property>
@@ -258,28 +386,7 @@ border: 1px solid #444;
        </font>
       </property>
       <property name="text">
-       <string>Delete</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="optionsButton">
-      <property name="geometry">
-       <rect>
-        <x>420</x>
-        <y>390</y>
-        <width>111</width>
-        <height>30</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>微軟正黑體</family>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Options</string>
+       <string>Delete word</string>
       </property>
      </widget>
      <widget class="InputForm" name="searchInput">
@@ -302,6 +409,48 @@ border: 1px solid #444;
       </property>
       <property name="alignment">
        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="backWordEditButton">
+      <property name="geometry">
+       <rect>
+        <x>600</x>
+        <y>390</y>
+        <width>71</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Back</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="searchOnNetButton">
+      <property name="geometry">
+       <rect>
+        <x>260</x>
+        <y>390</y>
+        <width>221</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Search on Cambridge</string>
       </property>
      </widget>
     </widget>
@@ -431,7 +580,7 @@ border: 1px solid #444;
        <rect>
         <x>60</x>
         <y>340</y>
-        <width>171</width>
+        <width>131</width>
         <height>41</height>
        </rect>
       </property>
@@ -450,9 +599,9 @@ border: 1px solid #444;
      <widget class="QPushButton" name="backInputButton">
       <property name="geometry">
        <rect>
-        <x>430</x>
+        <x>470</x>
         <y>340</y>
-        <width>171</width>
+        <width>131</width>
         <height>41</height>
        </rect>
       </property>
@@ -471,9 +620,9 @@ border: 1px solid #444;
      <widget class="QPushButton" name="clearInputButton">
       <property name="geometry">
        <rect>
-        <x>240</x>
+        <x>210</x>
         <y>340</y>
-        <width>181</width>
+        <width>131</width>
         <height>41</height>
        </rect>
       </property>
@@ -734,12 +883,12 @@ border: 1px solid #444;
      <string>-</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="searchOnNetButton">
+   <widget class="QPushButton" name="showingModeButton">
     <property name="geometry">
      <rect>
-      <x>520</x>
+      <x>570</x>
       <y>90</y>
-      <width>81</width>
+      <width>31</width>
       <height>31</height>
      </rect>
     </property>
@@ -752,28 +901,7 @@ border: 1px solid #444;
      </font>
     </property>
     <property name="text">
-     <string>Search</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="onlyWordButton">
-    <property name="geometry">
-     <rect>
-      <x>410</x>
-      <y>90</y>
-      <width>101</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>微軟正黑體</family>
-      <pointsize>12</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Meaning</string>
+     <string>:</string>
     </property>
    </widget>
   </widget>
