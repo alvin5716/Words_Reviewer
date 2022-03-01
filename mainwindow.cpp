@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     playing(true),more_tab_opening(false), minimizing(false), staying_on_top(false),
     word_mode(WordShowingMode::AllShowing),
     dragStartPos(QPoint(0,0)),
-    order_method(CustomEnum::OrderChronological)
+    order_method(AppOption::OrderChronological)
 {
     ui->setupUi(this);
     //widget settings
@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //sliders
     ui->intervalSlider->setRange(1,60);
     ui->intervalSlider->setValue(20);
-    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),this,SLOT(intervalShow(int)));
+    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),this,SLOT(intervalShowOnLabel(int)));
     connect(ui->intervalSlider,SIGNAL(actionTriggered(int)),this,SLOT(setFocus()));
     connect(ui->intervalSlider,SIGNAL(sliderPressed()),this,SLOT(setFocus()));
     //buttons
@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->optionsButton,SIGNAL(clicked(bool)),this,SLOT(showOptions()));
     connect(ui->backOptionButton,SIGNAL(clicked(bool)),this,SLOT(backToMainPage()));
     connect(ui->backWordEditButton,SIGNAL(clicked(bool)),this,SLOT(backToMainPage()));
-    connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(changeOrderMethod()));
+    connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(nextOrderMethod()));
     connect(ui->stayingOnTopButton,SIGNAL(clicked(bool)),this,SLOT(stayOnTopButtonClick()));
     //forms
     connect(ui->englishInput,SIGNAL(selectNextOne()),ui->partInput,SLOT(setFocus()));
@@ -126,37 +126,9 @@ void MainWindow::changeWordMode() {
 }
 
 void MainWindow::initSettings() {
-    //regex for checking format later
-    QRegExp regex("\\S+\\s+(?:\\0050\\S+\\0056\\0051)+\\s+\\S+");
     //read word file
-    unsigned lines_count=0;
-    while(!words_file->atEnd()) {
-        ++lines_count;
-        //read line
-        CustomString strIn = words_file->readLine();
-        //check format of the line
-        if(regex.indexIn(strIn) != 0) continue;
-        //start split the line
-        QStringList strsIn = strIn.split(' ');
-        try {
-            //check format of the splited line
-            if(strsIn.size()<3) throw strsIn.size();
-            //The line is in correct format. Start parse the line into word data
-            CustomString english(strsIn.at(0)), part(strsIn.at(1)), meaning(strsIn.at(2));
-            //chop \n and \r
-            meaning.chopNewLineChar();
-            //replace underline
-            english.replaceUnderlineToSpace();
-            part.replaceUnderlineToSpace();
-            meaning.replaceUnderlineToSpace();
-            //create new word and push it into data
-            words->pushNewWord(english,part,meaning);
-        } catch(int size) {
-            qDebug() << "Error: At File \"" + words_file->fileName() + "\": Only got" << size << "string in Line" << lines_count;
-            qApp->quit();
-        }
-    }
-    words_file->close();
+    bool isReadSuccessed = words_file->readWordFile(words);
+    if(!isReadSuccessed) qApp->quit();
     //timer
     timer = new CustomTimer;
     timer->setInterval(20000);
@@ -164,52 +136,25 @@ void MainWindow::initSettings() {
     timer->start();
     connect(ui->intervalSlider,SIGNAL(valueChanged(int)),timer,SLOT(restartWithInterval(int)));
     //read options file
-    lines_count=0;
-    while(!this->options_file->atEnd()) {
-        ++lines_count;
-        CustomString strIn = this->options_file->readLine();
-        QStringList strsIn = strIn.split(' ');
-        CustomString strOption = strsIn.at(0);
-        strOption.chopNewLineChar();
-        try {
-            if(strOption=="position") {
-                if(strsIn.length()<3) throw strsIn.length();
-                CustomString strX = strsIn.at(1), strY = strsIn.at(2);
-                int x=strX.toInt(), y=strY.toInt();
-                this->setGeometry(x,y,this->width(),this->height());
-            } else if(strOption=="order") {
-                if(strsIn.length()<2) throw strsIn.length();
-                CustomString strX = strsIn.at(1);
-                int x=strX.toInt();
-                for(int i=0;i<x;++i) this->changeOrderMethod();
-            } else if(strOption=="lastword") {
-                if(strsIn.length()<2) throw strsIn.length();
-                CustomString strX = strsIn.at(1);
-                int x=strX.toInt();
-                words->switchToWordByIndex(x);
-            } else if(strOption=="pause") {
-                this->playButtonClicked();
-            } else if(strOption=="stayontop") {
-                this->stayOnTopButtonClick();
-            } else if(strOption=="interval") {
-                if(strsIn.length()<2) throw strsIn.length();
-                CustomString strX = strsIn.at(1);
-                int x=strX.toInt();
-                ui->intervalSlider->setValue(x);
-                timer->restartWithInterval(x);
-                this->intervalShow(x);
-            }
-        } catch(int args) {
-            qDebug() << "Error: At File \"options\": Only got" << args << "arguments in Line" << lines_count;
-        }
-    }
-    options_file->close();
+    AppOption option = options_file->readOptionFile();
+    this->setGeometry(option.position_x, option.position_y, this->width(), this->height());
+    this->orderMethodSetAndShow(option.order);
+    words->switchToWordByIndex(option.lastword);
+    if(!option.playing) this->playButtonClicked();
+    if(option.staying_on_top) this->stayOnTopButtonClick();
+    intervalSetAndShow(option.interval);
     //show word
     connect(words,SIGNAL(giveWordData(QString)),ui->strWord,SLOT(setText(QString)));
     showCurrentWord();
 }
 
-void MainWindow::intervalShow(int interval) {
+void MainWindow::intervalSetAndShow(int interval) {
+    ui->intervalSlider->setValue(interval);
+    timer->restartWithInterval(interval);
+    this->intervalShowOnLabel(interval);
+}
+
+void MainWindow::intervalShowOnLabel(int interval) {
     ui->strIntervalSecond->setText(CustomString().setNum(interval)+" sec");
 }
 
@@ -252,19 +197,23 @@ void MainWindow::searchListAndShow() {
     }
 }
 
-void MainWindow::changeOrderMethod() {
+void MainWindow::nextOrderMethod() {
+    AppOption::OrderMethod new_method = AppOption::nextMethod(this->order_method);
+    orderMethodSetAndShow(new_method);
+}
+
+void MainWindow::orderMethodSetAndShow(AppOption::OrderMethod order_method) {
+    this->order_method = order_method;
     switch(order_method) {
-    case CustomEnum::OrderChronological:
-        order_method=CustomEnum::OrderRandom;
-        ui->playingOrderButton->setText("Random");
-        timer->disconnect();
-        connect(timer,SIGNAL(timeout()),this,SLOT(showRandomWord()));
-        break;
-    case CustomEnum::OrderRandom:
-        order_method=CustomEnum::OrderChronological;
+    case AppOption::OrderChronological:
         ui->playingOrderButton->setText("Chronological");
         timer->disconnect();
         connect(timer,SIGNAL(timeout()),this,SLOT(showNextWord()));
+        break;
+    case AppOption::OrderRandom:
+        ui->playingOrderButton->setText("Random");
+        timer->disconnect();
+        connect(timer,SIGNAL(timeout()),this,SLOT(showRandomWord()));
         break;
     }
 }
@@ -303,14 +252,10 @@ void MainWindow::deleteWordButtonClicked() {
 }
 
 void MainWindow::deleteWordConfirmed() {
-    for(int i=0;i<ui->wordList->count();++i) {
-        if(ui->wordList->item(i)->text()==words->getCurrentWord()->getWordData()) {
-            words_file->deleteLine(ui->wordList->count()-i);
-            QListWidgetItem *removed_item = ui->wordList->takeItem(i);
-            delete removed_item;
-            break;
-        }
-    }
+    unsigned int i = words->getCurrentIndex();
+    words_file->deleteLine(i+1);
+    QListWidgetItem *removed_item = ui->wordList->takeItem(i);
+    delete removed_item;
     words->deleteCurrentWord();
     showCurrentWord();
 }
@@ -431,20 +376,14 @@ void MainWindow::showLastWord() {
 }
 
 void MainWindow::showRandomWord() {
-    //=
-    /*
-    if(words_head==nullptr) {
-        ui->strWord->setText("-");
-        setPreferredFontSize();
-        return;
-    }
-    Word* new_current_word;
-    do {
-        new_current_word = words_head->at(qrand()%Word::getCount());
-    } while(current_word==new_current_word);
-    current_word = new_current_word;
-    showWord(current_word);
-    */
+    unsigned int num = words->getWordCount();
+    unsigned int current_index = words->getCurrentIndex();
+    unsigned int new_index;
+    if(num <= 1) return;
+    new_index = qrand()%(num-1);
+    if(new_index >= current_index) ++new_index;
+    words->switchToWordByIndex(new_index);
+    showCurrentWord();
 }
 
 void MainWindow::setPreferredFontSize() {
@@ -475,7 +414,7 @@ MainWindow::~MainWindow()
     options_file->clearToWrite();
     QTextStream temp(options_file);
     temp << "position" << ' ' << this->x() << ' ' << this->y() <<endl;
-    temp << "order" << ' ' << this->order_method <<endl;
+    temp << "order" << ' ' << static_cast<int>(this->order_method) <<endl;
     temp << "interval" << ' ' << ui->intervalSlider->value() <<endl;
     if(!playing) temp << "pause" <<endl;
     if(staying_on_top) temp << "stayontop" <<endl;

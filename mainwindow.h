@@ -9,6 +9,7 @@
 #include "wordshowingmode.h"
 #include "customstring.h"
 #include "customtimer.h"
+#include "appoption.h"
 #include <QMessageBox>
 #include <QListWidgetItem>
 
@@ -18,7 +19,6 @@ class MainWindow;
 
 namespace CustomEnum {
     enum PageNumber{MainPage,WordListPage,WordInputPage,OptionPage};
-    enum OrderMethod{OrderChronological,OrderRandom};
 }
 
 class MainWindow : public QMainWindow
@@ -36,6 +36,7 @@ public:
     void initSettings();
     void deleteWordConfirmed();
     void listWords();
+    void orderMethodSetAndShow(AppOption::OrderMethod order_method);
     QMessageBox* spawnWarningBox(CustomString content);
     void spawnConfirmingBox(CustomString content, YesNoFunc yesFunc, YesNoFunc noFunc=nullptr);
     ~MainWindow();
@@ -48,7 +49,7 @@ public slots:
     void showRandomWord();
     void submitInput();
     void clearInputs();
-    void changeOrderMethod();
+    void nextOrderMethod();
     void prepToAddNewWord();
     void showOptions();
     void closeButtonClicked();
@@ -64,7 +65,8 @@ public slots:
     void changeWordMode();
     void searchOnNet();
     void backToMainPage();
-    void intervalShow(int interval);
+    void intervalSetAndShow(int interval);
+    void intervalShowOnLabel(int interval);
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
 private:
     Ui::MainWindow *ui;
@@ -74,7 +76,7 @@ private:
     bool playing, more_tab_opening, minimizing, staying_on_top;
     WordShowingMode::Mode word_mode;
     QPoint dragStartPos;
-    CustomEnum::OrderMethod order_method;
+    AppOption::OrderMethod order_method;
 };
 
 #endif // MAINWINDOW_H

@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+    appoption.cpp \
         main.cpp \
         mainwindow.cpp \
     word.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
     wordshowingmode.cpp
 
 HEADERS += \
+    appoption.h \
         mainwindow.h \
     word.h \
     wordgroup.h \

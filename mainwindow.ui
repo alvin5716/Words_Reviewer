@@ -206,7 +206,7 @@ border: 1px solid #444;
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="mainPage">
      <widget class="QPushButton" name="listButton">
@@ -234,7 +234,7 @@ border: 1px solid #444;
       <property name="geometry">
        <rect>
         <x>70</x>
-        <y>270</y>
+        <y>240</y>
         <width>141</width>
         <height>51</height>
        </rect>
@@ -255,7 +255,7 @@ border: 1px solid #444;
       <property name="geometry">
        <rect>
         <x>70</x>
-        <y>160</y>
+        <y>150</y>
         <width>141</width>
         <height>51</height>
        </rect>
@@ -297,7 +297,7 @@ border: 1px solid #444;
       <property name="geometry">
        <rect>
         <x>240</x>
-        <y>160</y>
+        <y>150</y>
         <width>351</width>
         <height>51</height>
        </rect>
@@ -318,7 +318,7 @@ border: 1px solid #444;
       <property name="geometry">
        <rect>
         <x>240</x>
-        <y>270</y>
+        <y>240</y>
         <width>351</width>
         <height>51</height>
        </rect>
@@ -333,6 +333,50 @@ border: 1px solid #444;
       </property>
       <property name="text">
        <string>Manage all settings of this app.</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="refreshButton">
+      <property name="geometry">
+       <rect>
+        <x>70</x>
+        <y>340</y>
+        <width>141</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>16</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Refresh</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_12">
+      <property name="geometry">
+       <rect>
+        <x>240</x>
+        <y>320</y>
+        <width>431</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>If you somehow have to 
+manually modify the word file,
+please refresh this app.</string>
       </property>
      </widget>
     </widget>
