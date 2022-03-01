@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->backWordEditButton,SIGNAL(clicked(bool)),this,SLOT(backToMainPage()));
     connect(ui->playingOrderButton,SIGNAL(clicked(bool)),this,SLOT(nextOrderMethod()));
     connect(ui->stayingOnTopButton,SIGNAL(clicked(bool)),this,SLOT(stayOnTopButtonClick()));
+    connect(ui->refreshButton,SIGNAL(clicked(bool)),this,SLOT(refreshWords()));
     //forms
     connect(ui->englishInput,SIGNAL(selectNextOne()),ui->partInput,SLOT(setFocus()));
     connect(ui->partInput,SIGNAL(selectNextOne()),ui->meaningInput,SLOT(setFocus()));
@@ -74,8 +75,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QVector<QWidget*> pointerCursorWdgts({
         ui->moreButton, ui->showingModeButton, ui->closeButton, ui->minimizeButton,
         ui->nextButton, ui->lastButton, ui->playButton,
-        ui->listButton, ui->searchOnNetButton, ui->optionsButton,
-        ui->enterInputButton, ui->clearInputButton, ui->backInputButton,
+        ui->listButton, ui->GroupButton, ui->optionsButton, ui->refreshButton,
+        ui->enterInputButton, ui->clearInputButton, ui->searchOnNetButton, ui->backInputButton,
         ui->addNewWordButton, ui->deleteWordButton, ui->backWordEditButton,
         ui->stayingOnTopButton, ui->playingOrderButton, ui->intervalSlider, ui->backOptionButton,
 
@@ -84,8 +85,18 @@ MainWindow::MainWindow(QWidget *parent) :
         w->setCursor(Qt::PointingHandCursor);
 }
 
+void MainWindow::refreshWords() {
+    words->deleteWholeList();
+    words_file->readWordFile(words);
+    showCurrentWord();
+}
+
 void MainWindow::listButtonClicked() {
     ui->stackedWidget->setCurrentIndex(CustomEnum::WordListPage);
+    listAllWords();
+}
+
+void MainWindow::listAllWords() {
     ui->wordList->clear();
     words->searchWordStart();
     const Word* searched_word = words->searchWord();

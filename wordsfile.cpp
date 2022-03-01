@@ -6,9 +6,6 @@
 WordsFile::WordsFile(CustomString file_name)
     :QFile(file_name), regex("\\S+\\s+(?:\\0050\\S+\\0056\\0051)+\\s+\\S+")
 {
-    bool isFileOpenable = this->open(QIODevice::ReadOnly);
-    if(!isFileOpenable) qDebug() << "can't get words file";
-    else this->close();
 }
 
 void WordsFile::prepToWrite() {

@@ -65,6 +65,8 @@ public slots:
     void changeWordMode();
     void searchOnNet();
     void backToMainPage();
+    void refreshWords();
+    void listAllWords();
     void intervalSetAndShow(int interval);
     void intervalShowOnLabel(int interval);
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
