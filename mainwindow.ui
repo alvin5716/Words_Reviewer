@@ -206,7 +206,7 @@ border: 1px solid #444;
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="mainPage">
      <widget class="QPushButton" name="listButton">
@@ -390,13 +390,23 @@ please refresh this app.</string>
         <height>341</height>
        </rect>
       </property>
+      <property name="styleSheet">
+       <string notr="true">QListWidget::item
+{
+    background:#000000; 
+}
+QListWidget::item:selected
+{
+    background:#EF0000;
+}</string>
+      </property>
      </widget>
      <widget class="QPushButton" name="addNewWordButton">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>390</y>
-        <width>111</width>
+        <width>81</width>
         <height>30</height>
        </rect>
       </property>
@@ -409,15 +419,15 @@ please refresh this app.</string>
        </font>
       </property>
       <property name="text">
-       <string>Add word</string>
+       <string>Add</string>
       </property>
      </widget>
      <widget class="QPushButton" name="deleteWordButton">
       <property name="geometry">
        <rect>
-        <x>120</x>
+        <x>90</x>
         <y>390</y>
-        <width>131</width>
+        <width>81</width>
         <height>30</height>
        </rect>
       </property>
@@ -430,7 +440,7 @@ please refresh this app.</string>
        </font>
       </property>
       <property name="text">
-       <string>Delete word</string>
+       <string>Delete</string>
       </property>
      </widget>
      <widget class="InputForm" name="searchInput">
@@ -479,7 +489,7 @@ please refresh this app.</string>
      <widget class="QPushButton" name="searchOnNetButton">
       <property name="geometry">
        <rect>
-        <x>260</x>
+        <x>320</x>
         <y>390</y>
         <width>221</width>
         <height>31</height>
@@ -495,6 +505,27 @@ please refresh this app.</string>
       </property>
       <property name="text">
        <string>Search on Cambridge</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="editWordButton">
+      <property name="geometry">
+       <rect>
+        <x>180</x>
+        <y>390</y>
+        <width>81</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>微軟正黑體</family>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Edit</string>
       </property>
      </widget>
     </widget>

@@ -6,6 +6,7 @@
 #include "customstring.h"
 #include "wordgroup.h"
 #include "appoption.h"
+#include <functional>
 
 class WordsFile: public QFile
 {
@@ -14,10 +15,13 @@ public:
     void prepToWrite();
     void prepToRead();
     void clearToWrite();
-    bool deleteLine(int x); //return true if deletion successed, first line is 1 instead of 0
+    bool deleteLine(unsigned int x); //return true if deletion successed, first line is 1 instead of 0
+    bool editLine(unsigned int x, CustomString str); //return true if edit successed, first line is 1 instead of 0
+    bool insertLine(unsigned int x, CustomString str); //return true if insertion successed, first line is 1 instead of 0
     bool readWordFile(WordGroup* words); // reture true if read successed
     AppOption readOptionFile();
 private:
+    bool modifyByLine(std::function<bool(QTextStream &)> modify_method);
     QRegExp regex;
 };
 

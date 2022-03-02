@@ -51,6 +51,7 @@ public slots:
     void clearInputs();
     void nextOrderMethod();
     void prepToAddNewWord();
+    void prepToEditNewWord();
     void showOptions();
     void closeButtonClicked();
     void playButtonClicked();
@@ -79,6 +80,8 @@ private:
     WordShowingMode::Mode word_mode;
     QPoint dragStartPos;
     AppOption::OrderMethod order_method;
+    bool isEditing;
+    unsigned int selectedWordIndex;
 };
 
 #endif // MAINWINDOW_H

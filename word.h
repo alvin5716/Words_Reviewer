@@ -18,6 +18,9 @@ public:
     CustomString getEnglish() const;
     CustomString getPart() const;
     CustomString getMeaning() const;
+    void setEnglish(CustomString english);
+    void setPart(CustomString part);
+    void setMeaning(CustomString meaning);
     ~Word();
 private:
     CustomString english, part, meaning;

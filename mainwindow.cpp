@@ -15,7 +15,8 @@ MainWindow::MainWindow(QWidget *parent) :
     playing(true),more_tab_opening(false), minimizing(false), staying_on_top(false),
     word_mode(WordShowingMode::AllShowing),
     dragStartPos(QPoint(0,0)),
-    order_method(AppOption::OrderChronological)
+    order_method(AppOption::OrderChronological),
+    isEditing(false)
 {
     ui->setupUi(this);
     //widget settings
@@ -46,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->wordList,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(FindItemAndShowWord(QListWidgetItem*)));
     connect(ui->addNewWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToAddNewWord()));
     connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(listButtonClicked()));
+    connect(ui->editWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToEditNewWord()));
     connect(ui->enterInputButton,SIGNAL(clicked(bool)),this,SLOT(submitInput()));
     connect(ui->clearInputButton,SIGNAL(clicked(bool)),this,SLOT(clearInputs()));
     connect(ui->deleteWordButton,SIGNAL(clicked(bool)),this,SLOT(deleteWordButtonClicked()));
@@ -76,10 +78,9 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->moreButton, ui->showingModeButton, ui->closeButton, ui->minimizeButton,
         ui->nextButton, ui->lastButton, ui->playButton,
         ui->listButton, ui->GroupButton, ui->optionsButton, ui->refreshButton,
-        ui->enterInputButton, ui->clearInputButton, ui->searchOnNetButton, ui->backInputButton,
-        ui->addNewWordButton, ui->deleteWordButton, ui->backWordEditButton,
+        ui->enterInputButton, ui->clearInputButton, ui->backInputButton,
+        ui->addNewWordButton, ui->deleteWordButton, ui->editWordButton, ui->searchOnNetButton, ui->backWordEditButton,
         ui->stayingOnTopButton, ui->playingOrderButton, ui->intervalSlider, ui->backOptionButton,
-
     });
     for(QWidget* w: pointerCursorWdgts)
         w->setCursor(Qt::PointingHandCursor);
@@ -151,9 +152,9 @@ void MainWindow::initSettings() {
     this->setGeometry(option.position_x, option.position_y, this->width(), this->height());
     this->orderMethodSetAndShow(option.order);
     words->switchToWordByIndex(option.lastword);
-    if(!option.playing) this->playButtonClicked();
     if(option.staying_on_top) this->stayOnTopButtonClick();
     intervalSetAndShow(option.interval);
+    if(!option.playing) this->playButtonClicked();
     //show word
     connect(words,SIGNAL(giveWordData(QString)),ui->strWord,SLOT(setText(QString)));
     showCurrentWord();
@@ -255,7 +256,7 @@ void MainWindow::minimizeButtonClicked() {
 }
 
 void MainWindow::deleteWordButtonClicked() {
-    QString content("Delete: \""+(words->getCurrentWord()->getWordData()+"\"?"));
+    QString content("Delete: \""+(words->getSelectedWord()->getWordData()+"\"?"));
     if(playing) timer->stop();
     QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
     if(confirming_box==QMessageBox::Yes) this->deleteWordConfirmed();
@@ -263,11 +264,11 @@ void MainWindow::deleteWordButtonClicked() {
 }
 
 void MainWindow::deleteWordConfirmed() {
-    unsigned int i = words->getCurrentIndex();
+    unsigned int i = words->getSelectedIndex();
     words_file->deleteLine(i+1);
     QListWidgetItem *removed_item = ui->wordList->takeItem(i);
     delete removed_item;
-    words->deleteCurrentWord();
+    words->deleteSelectedWord();
     showCurrentWord();
 }
 
@@ -282,20 +283,32 @@ void MainWindow::submitInput() {
         CustomString english(ui->englishInput->text()), part(ui->partInput->text()), meaning(ui->meaningInput->text());
         if(english.lengthWithoutSpace()==0 || part.lengthWithoutSpace()==0 || meaning.lengthWithoutSpace()==0)
             throw 1;
-        //linked-list and set it to current word
-        part.partOfSpeechSetting();
-        if(words->isWordExisted(english,part)) throw 2;
-        words->pushNewWord(english,part,meaning);
-        showCurrentWord();
-        //file
-        english.replaceSpaceToUnderline();
-        meaning.replaceSpaceToUnderline();
-        words_file->prepToWrite();
-        QTextStream out(words_file);
-        out.setCodec("UTF-8");
-        out.setGenerateByteOrderMark(false);
-        out << english << ' ' << part << ' ' << meaning << '\n';
-        words_file->close();
+        if(this->isEditing) {
+            //linked-list and set it to current word
+            part.partOfSpeechSetting();
+            words->editSelectedWord(english,part,meaning);
+            showCurrentWord();
+            //file
+            unsigned int line = words->getSelectedIndex()+1;
+            english.replaceSpaceToUnderline();
+            meaning.replaceSpaceToUnderline();
+            CustomString str = english + ' ' + part + ' ' + meaning;
+            words_file->editLine(line, str);
+            //go back to list
+            ui->stackedWidget->setCurrentIndex(CustomEnum::WordListPage);
+        } else {
+            //linked-list and set it to current word
+            part.partOfSpeechSetting();
+            if(words->isWordExisted(english,part)) throw 2;
+            words->insertNewWord(english,part,meaning);
+            showCurrentWord();
+            //file
+            unsigned int line = words->getSelectedIndex()+1;
+            english.replaceSpaceToUnderline();
+            meaning.replaceSpaceToUnderline();
+            CustomString str = english + ' ' + part + ' ' + meaning;
+            words_file->insertLine(line, str);
+        }
         //clear forms
         clearInputs();
     } catch(int x) {
@@ -320,11 +333,27 @@ QMessageBox* MainWindow::spawnWarningBox(CustomString content) {
 }
 
 void MainWindow::prepToAddNewWord() {
+    this->isEditing = false;
+    if(words->getSelectedWord() == nullptr) words->selectCurrentWord();
     ui->stackedWidget->setCurrentIndex(CustomEnum::WordInputPage);
+    clearInputs();
+}
+
+void MainWindow::prepToEditNewWord() {
+    if(words->getWordCount() == 0) {
+        spawnWarningBox("No word exists in this group.");
+        return;
+    }
+    this->isEditing = true;
+    ui->stackedWidget->setCurrentIndex(CustomEnum::WordInputPage);
+    ui->englishInput->setText(words->getSelectedWord()->getEnglish());
+    ui->partInput->setText(words->getSelectedWord()->getPart());
+    ui->meaningInput->setText(words->getSelectedWord()->getMeaning());
 }
 
 void MainWindow::FindItemAndShowWord(QListWidgetItem* clicked_item) {
     words->switchToWordByData(clicked_item->text());
+    words->selectCurrentWord();
     showCurrentWord();
 }
 

@@ -25,6 +25,18 @@ CustomString Word::getMeaning() const{
     return meaning;
 }
 
+void Word::setEnglish(CustomString english) {
+    this->english = english;
+}
+
+void Word::setPart(CustomString part) {
+    this->part = part;
+}
+
+void Word::setMeaning(CustomString meaning) {
+    this->meaning = meaning;
+}
+
 CustomString Word::getWordData(WordShowingMode::Mode onlyWord) const{
     switch (onlyWord) {
     case WordShowingMode::AllShowing:

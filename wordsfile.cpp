@@ -20,25 +20,76 @@ void WordsFile::prepToRead() {
     this->open(QIODevice::ReadOnly);
 }
 
-bool WordsFile::deleteLine(int x) {
-    CustomString line;
+bool WordsFile::modifyByLine(std::function<bool(QTextStream&)> modify_method) {
     this->prepToRead();
     WordsFile temp("wordsfile_temp.txt");
     temp.prepToWrite();
     QTextStream temp_text(&temp);
     temp_text.setCodec("UTF-8");
     temp_text.setGenerateByteOrderMark(false);
-    int i=0;
-    while(!this->atEnd()) {
-        line = this->readLine();
-        if(++i!=x) temp_text << line;
-    }
+
+    bool isSuccessful = modify_method(temp_text);
+
     this->close();
     temp.close();
 
     remove(this->fileName());
     rename("wordsfile_temp.txt",this->fileName());
-    return i>=x;
+    return isSuccessful;
+}
+
+bool WordsFile::deleteLine(unsigned int x) {
+    bool isSuccessful = modifyByLine(
+        [this, x] (QTextStream& new_file_stream) {
+            CustomString old_line;
+            unsigned int i=0;
+            while(!this->atEnd()) {
+                old_line = this->readLine();
+                if(++i!=x) new_file_stream << old_line;
+            }
+            return i>=x;
+        }
+    );
+    return isSuccessful;
+}
+
+bool WordsFile::editLine(unsigned int x, CustomString new_line) {
+    bool isSuccessful = modifyByLine(
+        [this, x, new_line] (QTextStream& new_file_stream) {
+            CustomString old_line;
+            unsigned int i=0;
+            while(!this->atEnd()) {
+                old_line = this->readLine();
+                if(++i!=x) new_file_stream << old_line;
+                else new_file_stream << new_line << '\n';
+            }
+            return i>=x;
+        }
+    );
+    return isSuccessful;
+}
+
+bool WordsFile::insertLine(unsigned int x, CustomString new_line) {
+    bool isSuccessful = modifyByLine(
+        [this, x, new_line] (QTextStream& new_file_stream) {
+            CustomString line;
+            unsigned int i=0;
+            while(!this->atEnd()) {
+                if(++i!=x) {
+                    line = this->readLine();
+                    new_file_stream << line;
+                } else {
+                    new_file_stream << new_line << '\n';
+                }
+            }
+            if(i+1==x) {
+                new_file_stream << new_line << '\n';
+                ++i;
+            }
+            return i>=x;
+        }
+    );
+    return isSuccessful;
 }
 
 AppOption WordsFile::readOptionFile() {
