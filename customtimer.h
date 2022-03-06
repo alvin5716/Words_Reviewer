@@ -9,7 +9,7 @@ class CustomTimer: public QTimer
 public:
     CustomTimer();
 public slots:
-    void restartWithInterval(int interval);
+    void setIntervalSec(int interval);
 };
 
 #endif // CUSTOMTIMER_H

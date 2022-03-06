@@ -6,6 +6,7 @@
 #include <QDesktopWidget>
 #include <QKeyEvent>
 #include <QDesktopServices>
+#include "windowsettings.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -29,14 +30,13 @@ MainWindow::MainWindow(QWidget *parent) :
     //sliders
     ui->intervalSlider->setRange(1,60);
     ui->intervalSlider->setValue(20);
-    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),this,SLOT(intervalShowOnLabel(int)));
     connect(ui->intervalSlider,SIGNAL(actionTriggered(int)),this,SLOT(setFocus()));
     connect(ui->intervalSlider,SIGNAL(sliderPressed()),this,SLOT(setFocus()));
     //buttons
     connect(ui->closeButton,SIGNAL(clicked(bool)),this,SLOT(closeButtonClicked()));
-    connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(showNextWord()));
+    connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(nextButtonClicked()));
     connect(ui->nextButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
-    connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(showLastWord()));
+    connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(lastButtonClicked()));
     connect(ui->lastButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
     connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(playButtonClicked()));
     connect(ui->playButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->listButton,SIGNAL(clicked(bool)),this,SLOT(setFocus()));
     connect(ui->wordList,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(FindItemAndShowWord(QListWidgetItem*)));
     connect(ui->addNewWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToAddNewWord()));
-    connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(listButtonClicked()));
+    connect(ui->backInputButton,SIGNAL(clicked(bool)),this,SLOT(backInputButtonClicked()));
     connect(ui->editWordButton,SIGNAL(clicked(bool)),this,SLOT(prepToEditNewWord()));
     connect(ui->enterInputButton,SIGNAL(clicked(bool)),this,SLOT(submitInput()));
     connect(ui->clearInputButton,SIGNAL(clicked(bool)),this,SLOT(clearInputs()));
@@ -86,10 +86,37 @@ MainWindow::MainWindow(QWidget *parent) :
         w->setCursor(Qt::PointingHandCursor);
 }
 
+void MainWindow::nextButtonClicked() {
+    if(this->isEditing) return;
+    showNextWord();
+}
+
+void MainWindow::lastButtonClicked() {
+    if(this->isEditing) return;
+    showLastWord();
+}
+
 void MainWindow::refreshWords() {
     words->deleteWholeList();
     words_file->readWordFile(words);
     showCurrentWord();
+}
+
+void MainWindow::backInputButtonClicked() {
+    if(this->isEditing) leaveEditingMode();
+    listButtonClicked();
+}
+
+void MainWindow::leaveEditingMode() {
+    if(!this->isEditing) return;
+    this->isEditing = false;
+    if(playing) {
+        timer->start();
+        ui->playButton->setText("Playing");
+    } else {
+        ui->playButton->setText("Paused");
+    }
+    ui->playButton->setStyleSheet("");
 }
 
 void MainWindow::listButtonClicked() {
@@ -101,10 +128,12 @@ void MainWindow::listAllWords() {
     ui->wordList->clear();
     words->searchWordStart();
     const Word* searched_word = words->searchWord();
+    const Word* selected_word = words->getSelectedWord();
     while(searched_word != nullptr) {
         QListWidgetItem *item= new QListWidgetItem(static_cast<QString>(searched_word->getWordData()));
         item->setFont(QFont("微軟正黑體",14));
         ui->wordList->addItem(item);
+        if(searched_word == selected_word) item->setSelected(true);
         searched_word = words->searchWord();
     }
 }
@@ -119,6 +148,27 @@ void MainWindow::searchOnNet() {
     QDesktopServices::openUrl(url);
 }
 
+void MainWindow::moveInScreenRange(int x, int y) {
+    const QRect sc = QApplication::desktop()->screenGeometry();
+    int sc_w = sc.width(), sc_h = sc.height();
+    int w = this->width(), h = this->height();
+
+    int max_x = sc_w - 2*w/3, max_y = sc_h - 2*h/3;
+    int min_x = - w/3, min_y = - h/3;
+
+    int new_x, new_y;
+
+    if(x >= max_x) new_x = max_x;
+    else if(x <= min_x) new_x = min_x;
+    else new_x = x;
+
+    if(y >= max_y) new_y = max_y;
+    else if(y <= min_y) new_y = min_y;
+    else new_y = y;
+
+    this->move(new_x, new_y);
+}
+
 void MainWindow::mousePressEvent(QMouseEvent *e)
 {
     this->dragStartPos = e->globalPos();
@@ -127,7 +177,7 @@ void MainWindow::mousePressEvent(QMouseEvent *e)
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
 {
     const QPoint distant = e->globalPos() - this->dragStartPos;
-    move(this->x()+distant.x(), this->y()+distant.y());
+    this->moveInScreenRange(this->x()+distant.x(), this->y()+distant.y());
     this->dragStartPos = e->globalPos();
 }
 
@@ -146,10 +196,10 @@ void MainWindow::initSettings() {
     timer->setInterval(20000);
     connect(timer,&CustomTimer::timeout,this,&MainWindow::showNextWord);
     timer->start();
-    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),timer,SLOT(restartWithInterval(int)));
+    connect(ui->intervalSlider,SIGNAL(valueChanged(int)),this,SLOT(intervalSetAndShow(int)));
     //read options file
     AppOption option = options_file->readOptionFile();
-    this->setGeometry(option.position_x, option.position_y, this->width(), this->height());
+    this->moveInScreenRange(option.position_x, option.position_y);
     this->orderMethodSetAndShow(option.order);
     words->switchToWordByIndex(option.lastword);
     if(option.staying_on_top) this->stayOnTopButtonClick();
@@ -162,22 +212,17 @@ void MainWindow::initSettings() {
 
 void MainWindow::intervalSetAndShow(int interval) {
     ui->intervalSlider->setValue(interval);
-    timer->restartWithInterval(interval);
-    this->intervalShowOnLabel(interval);
-}
-
-void MainWindow::intervalShowOnLabel(int interval) {
+    timer->setIntervalSec(interval);
+    if(playing) timer->start();
     ui->strIntervalSecond->setText(CustomString().setNum(interval)+" sec");
 }
 
 void MainWindow::stayOnTopButtonClick() {
     if(this->staying_on_top) {
-        this->setWindowFlags(Qt::FramelessWindowHint);
-        this->show();
+        showOffTop(this);
         ui->stayingOnTopButton->setText("False");
     } else {
-        this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-        this->show();
+        showOnTop(this);
         ui->stayingOnTopButton->setText("True");
     }
     staying_on_top=!staying_on_top;
@@ -239,7 +284,7 @@ void MainWindow::minimizeButtonClicked() {
         ui->lastButton->show();
         ui->minimizeButton->setGeometry(610,90,ui->minimizeButton->width(),ui->minimizeButton->height());
         ui->closeButton->setGeometry(650,90,ui->closeButton->width(),ui->closeButton->height());
-        this->setGeometry(this->x(),this->y(),692,131);
+        this->resize(692,131);
         setPreferredFontSize();
     } else {
         if(more_tab_opening) moreButtonClicked();
@@ -250,22 +295,21 @@ void MainWindow::minimizeButtonClicked() {
         ui->lastButton->hide();
         ui->minimizeButton->setGeometry(10,10,ui->minimizeButton->width(),ui->minimizeButton->height());
         ui->closeButton->setGeometry(50,10,ui->closeButton->width(),ui->closeButton->height());
-        this->setGeometry(this->x(),this->y(),91,51);
+        this->resize(91,51);
     }
     minimizing=!minimizing;
 }
 
 void MainWindow::deleteWordButtonClicked() {
     QString content("Delete: \""+(words->getSelectedWord()->getWordData()+"\"?"));
-    if(playing) timer->stop();
-    QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
-    if(confirming_box==QMessageBox::Yes) this->deleteWordConfirmed();
-    if(playing) timer->start();
+    bool reply = spawnConfirmingBox(content);
+    if(reply) this->deleteWordConfirmed();
 }
 
 void MainWindow::deleteWordConfirmed() {
+    if(words->getSelectedWord() == nullptr) words->selectCurrentWord();
     unsigned int i = words->getSelectedIndex();
-    words_file->deleteLine(i+1);
+    words_file->deleteLine(i+1, true);
     QListWidgetItem *removed_item = ui->wordList->takeItem(i);
     delete removed_item;
     words->deleteSelectedWord();
@@ -293,9 +337,11 @@ void MainWindow::submitInput() {
             english.replaceSpaceToUnderline();
             meaning.replaceSpaceToUnderline();
             CustomString str = english + ' ' + part + ' ' + meaning;
-            words_file->editLine(line, str);
+            words_file->editLine(line, str, true);
+            //leave from editing mode
+            leaveEditingMode();
             //go back to list
-            ui->stackedWidget->setCurrentIndex(CustomEnum::WordListPage);
+            listButtonClicked();
         } else {
             //linked-list and set it to current word
             part.partOfSpeechSetting();
@@ -307,7 +353,7 @@ void MainWindow::submitInput() {
             english.replaceSpaceToUnderline();
             meaning.replaceSpaceToUnderline();
             CustomString str = english + ' ' + part + ' ' + meaning;
-            words_file->insertLine(line, str);
+            words_file->insertLine(line, str, true);
         }
         //clear forms
         clearInputs();
@@ -325,16 +371,27 @@ void MainWindow::submitInput() {
     }
 }
 
-QMessageBox* MainWindow::spawnWarningBox(CustomString content) {
+void MainWindow::spawnWarningBox(CustomString content) {
+    if(this->staying_on_top) showOffTop(this);
     QMessageBox *warning_box = new QMessageBox(QMessageBox::Icon::Critical,"Error",static_cast<QString>(content));
-    warning_box->setWindowFlags(Qt::WindowStaysOnTopHint);
-    warning_box->show();
-    return warning_box;
+    warning_box->setAttribute(Qt::WA_DeleteOnClose, true);
+    warning_box->exec();
+    if(this->staying_on_top) showOnTop(this);
+}
+
+bool MainWindow::spawnConfirmingBox(CustomString content) {
+    if(this->staying_on_top) showOffTop(this);
+    QMessageBox *confirming_box = new QMessageBox(QMessageBox::Icon::Question,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
+    confirming_box->setAttribute(Qt::WA_DeleteOnClose, true);
+    QMessageBox::StandardButton reply = static_cast<QMessageBox::StandardButton>(confirming_box->exec());
+    if(this->staying_on_top) showOnTop(this);
+    return (reply == QMessageBox::Yes);
 }
 
 void MainWindow::prepToAddNewWord() {
     this->isEditing = false;
     if(words->getSelectedWord() == nullptr) words->selectCurrentWord();
+
     ui->stackedWidget->setCurrentIndex(CustomEnum::WordInputPage);
     clearInputs();
 }
@@ -344,7 +401,16 @@ void MainWindow::prepToEditNewWord() {
         spawnWarningBox("No word exists in this group.");
         return;
     }
+
     this->isEditing = true;
+    if(words->getSelectedWord() == nullptr) words->selectCurrentWord();
+    else if(words->getSelectedWord() != words->getCurrentWord()) words->setCurrentToSelected();
+    showCurrentWord();
+
+    if(playing) timer->stop();
+    ui->playButton->setText("Editing");
+    ui->playButton->setStyleSheet("*{background-color: #EF0000}");
+
     ui->stackedWidget->setCurrentIndex(CustomEnum::WordInputPage);
     ui->englishInput->setText(words->getSelectedWord()->getEnglish());
     ui->partInput->setText(words->getSelectedWord()->getPart());
@@ -365,11 +431,13 @@ void MainWindow::showCurrentWord() {
 
 void MainWindow::closeButtonClicked() {
     QString content("Do you really want to close?");
-    QMessageBox::StandardButton confirming_box = QMessageBox::question(nullptr,"Confirming",content,QMessageBox::Yes|QMessageBox::No);
-    if(confirming_box==QMessageBox::Yes) qApp->quit();
+    bool reply = spawnConfirmingBox(content);
+    if(reply) qApp->quit();
 }
 
 void MainWindow::playButtonClicked() {
+    if(this->isEditing) return; //disabled while editing
+
     if(this->playing) {
         timer->stop();
         ui->playButton->setText("Paused");
@@ -396,13 +464,13 @@ void MainWindow::backToMainPage() {
 void MainWindow::moreTabOpen() {
     ui->moreButton->setText("Close");
     ui->stackedWidget->show();
-    this->setGeometry(this->geometry().x(),this->geometry().y(),this->geometry().width(),561);
+    this->resize(this->width(),561);
 }
 
 void MainWindow::moreTabClose() {
     ui->moreButton->setText("More");
     ui->stackedWidget->hide();
-    this->setGeometry(this->geometry().x(),this->geometry().y(),this->geometry().width(),131);
+    this->resize(this->width(),131);
 }
 
 void MainWindow::showNextWord() {
@@ -427,7 +495,7 @@ void MainWindow::showRandomWord() {
 }
 
 void MainWindow::setPreferredFontSize() {
-    int size=0.9*this->geometry().width()/ui->strWord->text().length();
+    int size=0.9*this->width()/ui->strWord->text().length();
     if(size<10) size=10;
     else if(size>30) size=30;
     ui->strWord->setFont(QFont("微軟正黑體",size));

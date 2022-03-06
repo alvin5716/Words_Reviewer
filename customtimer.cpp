@@ -6,8 +6,6 @@ CustomTimer::CustomTimer()
 
 }
 
-void CustomTimer::restartWithInterval(int interval) {
-    this->stop();
+void CustomTimer::setIntervalSec(int interval) {
     this->setInterval(interval*1000);
-    this->start();
 }

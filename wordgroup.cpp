@@ -202,6 +202,7 @@ void WordGroup::selectCurrentWord() {
     this->selected_word = this->current_word;
     this->selected_index = this->current_index;
 }
+
 void WordGroup::setCurrentToSelected() {
     this->current_word = this->selected_word;
     this->current_index = this->selected_index;

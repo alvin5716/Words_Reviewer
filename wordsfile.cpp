@@ -4,7 +4,7 @@
 #include <cstdio>
 
 WordsFile::WordsFile(CustomString file_name)
-    :QFile(file_name), regex("\\S+\\s+(?:\\0050\\S+\\0056\\0051)+\\s+\\S+")
+    :QFile(file_name), wordLineRegex("^(\\S+)\\s+((?:\\0050\\S+\\0056\\0051)+)\\s+(\\S+)$")
 {
 }
 
@@ -38,14 +38,21 @@ bool WordsFile::modifyByLine(std::function<bool(QTextStream&)> modify_method) {
     return isSuccessful;
 }
 
-bool WordsFile::deleteLine(unsigned int x) {
+bool WordsFile::deleteLine(unsigned int x, bool isWordLineOnly) {
     bool isSuccessful = modifyByLine(
-        [this, x] (QTextStream& new_file_stream) {
+        [this, x, isWordLineOnly] (QTextStream& new_file_stream) {
             CustomString old_line;
             unsigned int i=0;
             while(!this->atEnd()) {
                 old_line = this->readLine();
-                if(++i!=x) new_file_stream << old_line;
+                old_line.chopNewLineChar();
+                if((isWordLineOnly && this->wordLineRegex.indexIn(old_line)!=0)
+                    || (++i!=x)
+                )
+                {
+                    new_file_stream << old_line << '\n';
+                }
+
             }
             return i>=x;
         }
@@ -53,34 +60,48 @@ bool WordsFile::deleteLine(unsigned int x) {
     return isSuccessful;
 }
 
-bool WordsFile::editLine(unsigned int x, CustomString new_line) {
+bool WordsFile::editLine(unsigned int x, CustomString new_line, bool isWordLineOnly) {
     bool isSuccessful = modifyByLine(
-        [this, x, new_line] (QTextStream& new_file_stream) {
+        [this, x, new_line, isWordLineOnly] (QTextStream& new_file_stream) {
             CustomString old_line;
             unsigned int i=0;
             while(!this->atEnd()) {
                 old_line = this->readLine();
-                if(++i!=x) new_file_stream << old_line;
-                else new_file_stream << new_line << '\n';
-            }
-            return i>=x;
-        }
-    );
-    return isSuccessful;
-}
-
-bool WordsFile::insertLine(unsigned int x, CustomString new_line) {
-    bool isSuccessful = modifyByLine(
-        [this, x, new_line] (QTextStream& new_file_stream) {
-            CustomString line;
-            unsigned int i=0;
-            while(!this->atEnd()) {
-                if(++i!=x) {
-                    line = this->readLine();
-                    new_file_stream << line;
-                } else {
+                old_line.chopNewLineChar();
+                if((isWordLineOnly && this->wordLineRegex.indexIn(old_line)!=0)
+                    || (++i!=x)
+                )
+                {
+                    new_file_stream << old_line << '\n';
+                }
+                else {
                     new_file_stream << new_line << '\n';
                 }
+            }
+            return i>=x;
+        }
+    );
+    return isSuccessful;
+}
+
+bool WordsFile::insertLine(unsigned int x, CustomString new_line, bool isWordLineOnly) {
+    bool isSuccessful = modifyByLine(
+        [this, x, new_line, isWordLineOnly] (QTextStream& new_file_stream) {
+            CustomString old_line;
+            unsigned int i=0;
+            while(!this->atEnd()) {
+                old_line = this->readLine();
+                old_line.chopNewLineChar();
+                if(!
+                    ((isWordLineOnly && this->wordLineRegex.indexIn(old_line)!=0)
+                        || (++i!=x)
+                    )
+                )
+                {
+                    new_file_stream << new_line << '\n';
+                    ++i;
+                }
+                new_file_stream << old_line << '\n';
             }
             if(i+1==x) {
                 new_file_stream << new_line << '\n';
@@ -140,27 +161,18 @@ bool WordsFile::readWordFile(WordGroup* words) {
         ++lines_count;
         //read line
         CustomString strIn = this->readLine();
+        //chop \n and \r
+        strIn.chopNewLineChar();
         //check format of the line
-        if(regex.indexIn(strIn) != 0) continue;
-        //start split the line
-        QStringList strsIn = strIn.split(' ');
-        try {
-            //check format of the splited line
-            if(strsIn.size()<3) throw strsIn.size();
-            //The line is in correct format. Start parse the line into word data
-            CustomString english(strsIn.at(0)), part(strsIn.at(1)), meaning(strsIn.at(2));
-            //chop \n and \r
-            meaning.chopNewLineChar();
-            //replace underline
-            english.replaceUnderlineToSpace();
-            part.replaceUnderlineToSpace();
-            meaning.replaceUnderlineToSpace();
-            //create new word and push it into data
-            words->pushNewWord(english,part,meaning);
-        } catch(int size) {
-            qDebug() << "Error: At File \"" + this->fileName() + "\": Only got" << size << "string in Line" << lines_count;
-            return false;
-        }
+        if(wordLineRegex.indexIn(strIn) != 0) continue;
+        //The line is in correct format. Start parse the line into word data
+        CustomString english(wordLineRegex.cap(1)), part(wordLineRegex.cap(2)), meaning(wordLineRegex.cap(3));
+        //replace underline
+        english.replaceUnderlineToSpace();
+        part.replaceUnderlineToSpace();
+        meaning.replaceUnderlineToSpace();
+        //create new word and push it into data
+        words->pushNewWord(english,part,meaning);
     }
     this->close();
     return true;

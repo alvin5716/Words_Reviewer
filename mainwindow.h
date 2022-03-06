@@ -36,17 +36,20 @@ public:
     void initSettings();
     void deleteWordConfirmed();
     void listWords();
+    void leaveEditingMode();
     void orderMethodSetAndShow(AppOption::OrderMethod order_method);
-    QMessageBox* spawnWarningBox(CustomString content);
-    void spawnConfirmingBox(CustomString content, YesNoFunc yesFunc, YesNoFunc noFunc=nullptr);
+    void spawnWarningBox(CustomString content);
+    bool spawnConfirmingBox(CustomString content);
     ~MainWindow();
 public slots:
     void mousePressEvent(QMouseEvent *e) override;
     void mouseMoveEvent(QMouseEvent *e) override;
     void showCurrentWord();
+    void nextButtonClicked();
+    void lastButtonClicked();
+    void showRandomWord();
     void showNextWord();
     void showLastWord();
-    void showRandomWord();
     void submitInput();
     void clearInputs();
     void nextOrderMethod();
@@ -57,6 +60,7 @@ public slots:
     void playButtonClicked();
     void moreButtonClicked();
     void listButtonClicked();
+    void backInputButtonClicked();
     void minimizeButtonClicked();
     void deleteWordButtonClicked();
     void stayOnTopButtonClick();
@@ -69,8 +73,8 @@ public slots:
     void refreshWords();
     void listAllWords();
     void intervalSetAndShow(int interval);
-    void intervalShowOnLabel(int interval);
     void FindItemAndShowWord(QListWidgetItem* clicked_item);
+    void moveInScreenRange(int x, int y);
 private:
     Ui::MainWindow *ui;
     WordsFile *words_file, *options_file;

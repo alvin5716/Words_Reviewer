@@ -27,6 +27,7 @@ SOURCES += \
     appoption.cpp \
         main.cpp \
         mainwindow.cpp \
+    windowsettings.cpp \
     word.cpp \
     wordgroup.cpp \
     wordsfile.cpp \
@@ -38,6 +39,7 @@ SOURCES += \
 HEADERS += \
     appoption.h \
         mainwindow.h \
+    windowsettings.h \
     word.h \
     wordgroup.h \
     wordsfile.h \
